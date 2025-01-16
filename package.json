@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
+    "express": "^4.21.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "styled-components": "^6.1.14"
@@ -26,7 +28,7 @@
     "vite": "^4.2.0"
   },
   "engines": {
-    "node": "18.x",  // Use a stable version of Node.js
-    "npm": "9.x"     // Match a compatible npm version
+    "node": "18.x",
+    "npm": "9.x"
   }
 }
