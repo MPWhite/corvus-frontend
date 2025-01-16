@@ -59,7 +59,7 @@ const SendButton = styled.button`
 `;
 
 
-const ChatTextBox = ({onSend}: {onSend: any}) => {
+const ChatTextBox = ({ onSend }: { onSend: any }) => {
   const [value, setValue] = useState(''); // State to manage input value
 
   const handleChange = (newValue: any) => {
@@ -73,12 +73,20 @@ const ChatTextBox = ({onSend}: {onSend: any}) => {
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSend(); // Trigger send on Enter key press
+    }
+  };
+
   return (
     <TextBoxContainer>
       <InputWrapper>
         <Input
           value={value}
           onChange={(e) => handleChange(e.target.value)}
+          onKeyDown={handleKeyDown as any} // Listen for key press
           placeholder="Ask anything..."
         />
         <SendButton onClick={handleSend}>
@@ -88,6 +96,7 @@ const ChatTextBox = ({onSend}: {onSend: any}) => {
     </TextBoxContainer>
   );
 };
+
 
 export default ChatTextBox;
 
