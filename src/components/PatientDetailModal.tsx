@@ -196,8 +196,8 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ patient, onClos
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Type:</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getReferralTypeStyles(patient.referralType)}`}>
-                                            {getReferralTypeDisplay(patient.referralType)}
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getReferralTypeStyles(patient.referralType!)}`}>
+                                            {getReferralTypeDisplay(patient.referralType!)}
                                         </span>
                                     </div>
                                     <div className="flex justify-between text-sm">

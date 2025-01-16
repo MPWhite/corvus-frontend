@@ -28,14 +28,14 @@ const PatientList: React.FC<PatientListProps> = ({ patients, onPatientSelect, hi
                             </div>
                             <div className="flex flex-col items-end">
                                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                    patient.priorityScore >= 75 ? 'bg-red-100 text-red-800' :
-                                    patient.priorityScore >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                    patient.priorityScore! >= 75 ? 'bg-red-100 text-red-800' :
+                                    patient.priorityScore! >= 50 ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-green-100 text-green-800'
                                 }`}>
                                     Priority: {patient.priorityScore}
                                 </span>
                                 <span className="text-xs text-gray-500 mt-1">
-                                    {new Date(patient.consultDate).toLocaleDateString()}
+                                    {new Date(patient.consultDate!).toLocaleDateString()}
                                 </span>
                             </div>
                         </div>

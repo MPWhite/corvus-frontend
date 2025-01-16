@@ -98,7 +98,7 @@ const TriageDashboard: React.FC = () => {
     // Separate patients by review status
     const needsReviewPatients = filteredPatients
         .filter(p => p.needsReview && p.isCandidate)
-        .sort((a, b) => b.priorityScore - a.priorityScore);
+        .sort((a, b) => b.priorityScore! - a.priorityScore!);
     const reviewedPatients = filteredPatients
         .filter(p => !p.needsReview && p.isCandidate)
         .sort((a, b) => {

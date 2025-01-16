@@ -59,10 +59,10 @@ const SendButton = styled.button`
 `;
 
 
-const ChatTextBox = ({onSend}) => {
+const ChatTextBox = ({onSend}: {onSend: any}) => {
   const [value, setValue] = useState(''); // State to manage input value
 
-  const handleChange = (newValue) => {
+  const handleChange = (newValue: any) => {
     setValue(newValue);
   };
 
@@ -218,7 +218,7 @@ const Response = ({loading, loadingPct, responseType, responseStat}: {
   if (responseType === ResponseType.STAT_RESPONSE) {
     return (
       <ResponseContainer>
-        <StatResponse statText={responseStat}/>
+        <StatResponse statText={responseStat!}/>
       </ResponseContainer>
     );
   }
@@ -230,6 +230,8 @@ const Response = ({loading, loadingPct, responseType, responseStat}: {
       </ResponseContainer>
     );
   }
+
+  return <></>
 };
 
 // New file probably

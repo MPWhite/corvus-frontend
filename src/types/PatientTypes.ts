@@ -42,11 +42,11 @@ export interface Patient {
     requiredDocuments: Document[];
     lastUpdated: Date;
     notes: Note[];
-    consultDate: Date;
-    urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
-    priorityScore: number;
+    consultDate?: Date;
+    urgencyLevel?: 'low' | 'medium' | 'high' | 'critical';
+    priorityScore?: number;
     reviewedAt?: Date;
     scheduledDate?: Date;
-    ehrId: string;
-    referralType: ReferralType;
+    ehrId?: string;
+    referralType?: ReferralType;
 }
