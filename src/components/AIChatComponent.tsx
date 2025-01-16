@@ -122,7 +122,7 @@ const ActionSuggestions = () => {
 
 const ResponseContainer = styled.div`
     margin-top: 16px;
-`
+`;
 
 const ResponseCard = styled.div`
     padding: 16px;
@@ -149,7 +149,27 @@ const StatCard = styled.span`
 
 const CardText = styled.span`
     font-size: 14px;
-`
+    margin-right: 16px; /* Add space between text and button */
+`;
+
+const ConfirmButton = styled.button`
+    background-color: #2563eb; /* Primary button color */
+    color: #ffffff; /* Button text color */
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #1d4ed8; /* Darker shade on hover */
+    }
+
+    &:active {
+        background-color: #1e40af; /* Even darker shade on click */
+    }
+`;
 
 
 const NoResponse = () => {
@@ -176,17 +196,45 @@ const StatResponse = ({statText}: { statText: string }) => {
   )
 }
 
+const CheckMark = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #10b981; /* Green color */
+    font-size: 20px;
+    font-weight: bold;
+    margin-left: 16px;
+    margin-right: 20px
+`;
+
+
 const RequestResponse = () => {
+  const [isConfirmed, setIsConfirmed] = React.useState(false);
+
+  const handleConfirm = () => {
+    setIsConfirmed(true);
+  };
+
   return (
     <ResponseCard>
       <Icon>
-        <MagnifyingGlassCircleIcon className="h-6 w-6"/>
+        <MagnifyingGlassCircleIcon className="h-6 w-6" />
       </Icon>
-      <CardText>We'll need to reach out to the patient to request that data. Would you like to initiate the request
-        now?</CardText>
+      <CardText>
+        We'll need to reach out to the patient to request that data. Would you like to initiate the request
+        now?
+      </CardText>
+      {isConfirmed ? (
+        <CheckMark>
+          ✓
+        </CheckMark>
+      ) : (
+        <ConfirmButton onClick={handleConfirm}>Send</ConfirmButton>
+      )}
     </ResponseCard>
-  )
-}
+  );
+};
+
 
 const LoadingResponse = ({loadingPct}: { loadingPct: number }) => {
   return (
