@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://corvus-be-ea11e5b5e66c.herokuapp.com/',
+        target: 'http://localhost:40001/',
         changeOrigin: true,
       },
     },
