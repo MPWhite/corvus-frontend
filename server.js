@@ -8,27 +8,18 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Backend API URL
-const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com/';
+const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com';
 
-// Proxy /api requests to the backend
-app.use(
-  '/api',
-  createProxyMiddleware({
-    target: API_URL,
-    changeOrigin: true,
-  })
-);
-
-// Serve static files from the dist directory
+// Serve static files
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Handle all other routes with the index.html
+// Handle all other routes
 app.get('*', (req, res) => {
+  console.log(`📄 Serving index.html for: ${req.originalUrl}`);
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });

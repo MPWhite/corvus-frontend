@@ -1,7 +1,8 @@
 // src/services/api.ts
 import { Patient } from '../types/PatientTypes';
 
-const API_URL = '/api';  // Make this explicit for now
+// const API_URL = '/api';  // Make this explicit for now
+const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com/api';
 
 export const fetchPatients = async (): Promise<Patient[]> => {
     try {
