@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Backend API URL
-const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com';
+const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com/';
 
 // Proxy /api requests to the backend
 app.use(
@@ -17,7 +17,6 @@ app.use(
   createProxyMiddleware({
     target: API_URL,
     changeOrigin: true,
-    logLevel: 'debug', // Debug logs (remove in production)
   })
 );
 
