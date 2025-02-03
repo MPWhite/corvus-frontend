@@ -167,7 +167,6 @@ const TriageDashboard: React.FC = () => {
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold text-white">
-                                Corvus
                                 <span className="text-blue-200 ml-2 text-xl font-normal">
                                     Patient Triage Dashboard
                                 </span>

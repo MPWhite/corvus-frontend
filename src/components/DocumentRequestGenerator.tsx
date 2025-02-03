@@ -35,7 +35,7 @@ Could you please send this document at your earliest convenience? If you have an
 Thank you for your assistance.
 
 Best regards,
-Corvus Medical Center`
+Papazian Medical Center`
     });
 
     // Simulate available HIE sources
