@@ -467,7 +467,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser }) => {
             {selectedPatient && (
                 <PatientDetailModal
                     patient={selectedPatient}
-                    currentUser={currentUser}
+                    currentUser={currentUser!}
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     onUpdateStatus={handleStatusUpdate}

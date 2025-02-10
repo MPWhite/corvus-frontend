@@ -166,14 +166,14 @@ const PatientMedicalHistoryTab: React.FC<PatientMedicalHistoryTabProps> = ({ pat
                                 <div className="flex items-center">
                                     <p className="font-medium text-gray-900">{surgery.procedure}</p>
                                     <SourceCitation 
-                                        source={surgery.facility}
-                                        date={surgery.date}
+                                        source={surgery.facility!}
+                                        date={surgery.date!}
                                     />
                                 </div>
                                 <div className="mt-1 text-sm text-gray-600">
                                     <p>Surgeon: {surgery.surgeon}</p>
                                     <p>Facility: {surgery.facility}</p>
-                                    <p>Date: {new Date(surgery.date).toLocaleDateString()}</p>
+                                    <p>Date: {new Date(surgery.date!).toLocaleDateString()}</p>
                                     {surgery.complications && (
                                         <p className="text-red-600">Complications: {surgery.complications}</p>
                                     )}

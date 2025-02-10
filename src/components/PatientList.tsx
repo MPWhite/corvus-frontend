@@ -52,6 +52,7 @@ const PatientList: React.FC<PatientListProps> = ({ title, patients, onPatientSel
             <div className="space-y-2 mt-2">
                 {patients.map((patient) => (
                     <PatientCard
+                      // @ts-ignore
                         key={patient.id || patient._id}
                         patient={patient}
                         onClick={onPatientSelect}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AIAssessment } from '../types/PatientTypes';
+import {AIAssessment, Patient} from '../types/PatientTypes';
 import { generateAIAnalysis } from '../utils/aiAnalysis';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
