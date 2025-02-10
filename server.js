@@ -1,9 +1,12 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from 'path';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com';
 
@@ -18,12 +21,17 @@ app.use(
   })
 );
 
-
-// Handle client-side routing
+// Handle all other routes
 app.get('*', (req, res) => {
+    console.log(`📄 Serving index.html for: ${req.originalUrl}`);
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
+
+
+
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Frontend server running on port ${PORT}`);
-}); 
+    console.log(`🚀 Server is running on port ${PORT}`);
+});
+

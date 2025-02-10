@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "node server.cjs"
+    "start": "node server.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
