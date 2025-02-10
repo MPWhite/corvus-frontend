@@ -58,45 +58,44 @@ const SendButton = styled.button`
     }
 `;
 
+interface ChatResponse {
+    content: string;
+    type: 'user' | 'assistant';
+}
 
-const ChatTextBox = ({ onSend }: { onSend: any }) => {
-  const [value, setValue] = useState(''); // State to manage input value
+interface ChatTextBoxProps {
+    onSend: (message: string) => void;
+}
 
-  const handleChange = (newValue: any) => {
-    setValue(newValue);
-  };
+const ChatTextBox = ({onSend}: ChatTextBoxProps) => {
+    const [value, setValue] = useState('');
 
-  const handleSend = () => {
-    if (value.trim()) {
-      onSend(value); // Call the onSend function with the current value
-      setValue('');  // Clear the input after sending
-    }
-  };
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setValue(e.target.value);
+    };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      handleSend(); // Trigger send on Enter key press
-    }
-  };
+    const handleSend = () => {
+        if (value.trim()) {
+            onSend(value); // Call the onSend function with the current value
+            setValue('');  // Clear the input after sending
+        }
+    };
 
-  return (
-    <TextBoxContainer>
-      <InputWrapper>
-        <Input
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          onKeyDown={handleKeyDown as any} // Listen for key press
-          placeholder="Ask anything..."
-        />
-        <SendButton onClick={handleSend}>
-          Send
-        </SendButton>
-      </InputWrapper>
-    </TextBoxContainer>
-  );
+    return (
+        <TextBoxContainer>
+            <InputWrapper>
+                <Input
+                    value={value}
+                    onChange={handleChange}
+                    placeholder="Ask anything..."
+                />
+                <SendButton onClick={handleSend}>
+                    Send
+                </SendButton>
+            </InputWrapper>
+        </TextBoxContainer>
+    );
 };
-
 
 export default ChatTextBox;
 
@@ -122,7 +121,7 @@ const ActionSuggestions = () => {
 
 const ResponseContainer = styled.div`
     margin-top: 16px;
-`;
+`
 
 const ResponseCard = styled.div`
     padding: 16px;
@@ -149,27 +148,7 @@ const StatCard = styled.span`
 
 const CardText = styled.span`
     font-size: 14px;
-    margin-right: 16px; /* Add space between text and button */
-`;
-
-const ConfirmButton = styled.button`
-    background-color: #2563eb; /* Primary button color */
-    color: #ffffff; /* Button text color */
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:hover {
-        background-color: #1d4ed8; /* Darker shade on hover */
-    }
-
-    &:active {
-        background-color: #1e40af; /* Even darker shade on click */
-    }
-`;
+`
 
 
 const NoResponse = () => {
@@ -196,45 +175,17 @@ const StatResponse = ({statText}: { statText: string }) => {
   )
 }
 
-const CheckMark = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #10b981; /* Green color */
-    font-size: 20px;
-    font-weight: bold;
-    margin-left: 16px;
-    margin-right: 20px
-`;
-
-
 const RequestResponse = () => {
-  const [isConfirmed, setIsConfirmed] = React.useState(false);
-
-  const handleConfirm = () => {
-    setIsConfirmed(true);
-  };
-
   return (
     <ResponseCard>
       <Icon>
-        <MagnifyingGlassCircleIcon className="h-6 w-6" />
+        <MagnifyingGlassCircleIcon className="h-6 w-6"/>
       </Icon>
-      <CardText>
-        We'll need to reach out to the patient to request that data. Would you like to initiate the request
-        now?
-      </CardText>
-      {isConfirmed ? (
-        <CheckMark>
-          ✓
-        </CheckMark>
-      ) : (
-        <ConfirmButton onClick={handleConfirm}>Send</ConfirmButton>
-      )}
+      <CardText>We'll need to reach out to the patient to request that data. Would you like to initiate the request
+        now?</CardText>
     </ResponseCard>
-  );
-};
-
+  )
+}
 
 const LoadingResponse = ({loadingPct}: { loadingPct: number }) => {
   return (
@@ -249,63 +200,62 @@ const LoadingResponse = ({loadingPct}: { loadingPct: number }) => {
   )
 }
 
-
-const Response = ({loading, loadingPct, responseType, responseStat}: {
-  loading: boolean,
-  loadingPct: number,
-  responseType: ResponseType
-  responseStat?: string
-}) => {
-  if (loading) {
-    return (
-      <ResponseContainer>
-        <LoadingResponse loadingPct={loadingPct}/>
-      </ResponseContainer>
-    );
-  }
-
-  if (responseType === ResponseType.NO_RESPONSE) {
-    return (
-      <ResponseContainer>
-        <NoResponse/>
-      </ResponseContainer>
-    );
-  }
-
-  if (responseType === ResponseType.STAT_RESPONSE) {
-    return (
-      <ResponseContainer>
-        <StatResponse statText={responseStat!}/>
-      </ResponseContainer>
-    );
-  }
-
-  if (responseType === ResponseType.REQUEST_RESPONSE) {
-    return (
-      <ResponseContainer>
-        <RequestResponse/>
-      </ResponseContainer>
-    );
-  }
-
-  return <></>
-};
-
-// New file probably
-
-const Description = styled.span`
-    color: #6b7280;
-    font-size: 14px;
-    display: block;
-    margin-bottom: 16px;
-    margin-top: -12px;
-`
-
+// Add ResponseType enum
 enum ResponseType {
-  NO_RESPONSE,
-  STAT_RESPONSE,
-  REQUEST_RESPONSE,
+    NO_RESPONSE = 'NO_RESPONSE',
+    STAT_RESPONSE = 'STAT_RESPONSE',
+    REQUEST_RESPONSE = 'REQUEST_RESPONSE'
 }
+
+// Add Description component
+const Description = styled.p`
+    color: #666;
+    margin-bottom: 1rem;
+`;
+
+// Add Response component
+interface AIResponse {
+    loading: boolean;
+    loadingPct: number;
+    responseType: ResponseType;
+    responseStat: string;
+}
+
+const AIResponseComponent: React.FC<AIResponse> = ({ loading, loadingPct, responseType, responseStat }) => {
+    if (loading) {
+        return (
+            <ResponseContainer>
+                <LoadingResponse loadingPct={loadingPct}/>
+            </ResponseContainer>
+        );
+    }
+
+    if (responseType === ResponseType.NO_RESPONSE) {
+        return (
+            <ResponseContainer>
+                <NoResponse/>
+            </ResponseContainer>
+        );
+    }
+
+    if (responseType === ResponseType.STAT_RESPONSE) {
+        return (
+            <ResponseContainer>
+                <StatResponse statText={responseStat}/>
+            </ResponseContainer>
+        );
+    }
+
+    if (responseType === ResponseType.REQUEST_RESPONSE) {
+        return (
+            <ResponseContainer>
+                <RequestResponse/>
+            </ResponseContainer>
+        );
+    }
+
+    return null;
+};
 
 export const AIChat = ({patient}: { patient: Patient }) => {
   const [showResponse, setShowResponse] = React.useState<boolean>(false)
@@ -363,8 +313,13 @@ export const AIChat = ({patient}: { patient: Patient }) => {
         find similar historical cases.</Description>
       <ChatTextBox onSend={handleSend}/>
       {/*<ActionSuggestions/>*/}
-      {showResponse && <Response loading={responseLoading} loadingPct={loadingPct} responseType={responseType}
-                                 responseStat={responseStat}/>}
+      {showResponse && <AIResponseComponent loading={responseLoading} loadingPct={loadingPct} responseType={responseType} responseStat={responseStat}/>}
     </>
   )
 }
+
+// Add type for message content
+const handleMessage = (message: string) => {
+    if (!message?.trim()) return;
+    // ... rest of the function
+};

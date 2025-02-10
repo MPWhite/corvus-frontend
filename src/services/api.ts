@@ -1,79 +1,81 @@
 // src/services/api.ts
 import { Patient } from '../types/PatientTypes';
 
-const API_URL = '/api';  // Make this explicit for now
-// const API_URL = 'https://corvus-be-ea11e5b5e66c.herokuapp.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
-export const fetchPatients = async (): Promise<Patient[]> => {
+const mockPatient: Patient = {
+    id: '1',
+    name: 'John Doe',
+    age: 45,
+    gender: 'male',
+    bmi: 24.5,
+    reason: 'Knee replacement evaluation',
+    needsReview: true,
+    isCandidate: true,
+    assignedTo: 'Dr. Smith',
+    referringProvider: 'Dr. Jones',
+    referralNotes: 'Patient has severe osteoarthritis',
+    surgeryType: 'Knee Replacement',
+    surgeryRequirements: [],
+    medicalHistory: [],
+    medications: [],
+    requiredDocuments: [],
+    lastUpdated: new Date(),
+    notes: [],
+    consultDate: new Date(),
+    urgencyLevel: 'medium',
+    priorityScore: 75,
+    ehrId: '12345',
+    referralType: 'external',
+    reviewStatus: 'PENDING_MA_REVIEW',
+    reviewNotes: [],
+    surgicalHistory: [],
+    labResults: []
+};
+
+// Add RequiredAction type if it's used
+export interface RequiredAction {
+    id: string;
+    type: string;
+    description: string;
+    dueDate: Date;
+    assignedTo: string;
+    status: 'pending' | 'completed';
+}
+
+export const fetchPatients = async () => {
     try {
-        console.log('🔍 Attempting to fetch patients...');
-        const fullUrl = `${API_URL}/patients`;
-        console.log('📍 Fetching from:', fullUrl);
-
-        const response = await fetch(fullUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            mode: 'cors'  // Add this explicitly
-        });
-
-        console.log('📡 Response status:', response.status);
-
+        const response = await fetch(`${API_URL}/patients`);
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('❌ Error response:', errorData);
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+            throw new Error('Network response was not ok');
         }
-        
-        const data = await response.json();
-        console.log('✅ Fetched patients:', data.length);
-        return data;
+        return await response.json();
     } catch (error) {
-        console.error('❌ Error in fetchPatients:', error);
+        console.error('Error fetching patients:', error);
         throw error;
     }
 };
 
-export const updatePatientStatus = async (patientId: string, status: string): Promise<void> => {
+export const updatePatientStatus = async (patientId: string, status: string) => {
     try {
-        // TODO: Replace with actual API call
-        console.log(`Updating patient ${patientId} status to ${status}`);
-        return Promise.resolve();
+        const response = await fetch(`${API_URL}/patients/${patientId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
+        return await response.json();
     } catch (error) {
         console.error('Error updating patient status:', error);
         throw error;
     }
 };
-
-export const generateDocumentRequest = async (
-    patientName: string,
-    documentType: string,
-    referringProvider: string
-): Promise<string> => {
-    const prompt = `Generate a professional, concise email to request medical documents.
-    Context:
-    - Patient Name: ${patientName}
-    - Document Needed: ${documentType}
-    - Referring Provider: ${referringProvider}
-    
-    The email should:
-    1. Be professional and courteous
-    2. Clearly state which document is needed
-    3. Reference the patient by name
-    4. Include a polite urgency
-    5. Thank the provider
-    
-    Email:`;
-
-    // TODO: Replace with your actual LLM API call
-    return Promise.resolve(
-        `Dear ${referringProvider},\n\nI hope this email finds you well...`
-    );
-
-};
-
 
 export const getChatCompletion = async (chat: string, patient: Patient): Promise<any> => {
     try {
@@ -93,10 +95,9 @@ export const getChatCompletion = async (chat: string, patient: Patient): Promise
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
         }
 
-        const data = await response.json();
-        return data;
+        return await response.json();
     } catch (error) {
-        console.error(error)
+        console.error(error);
         throw error;
     }
-}
+};

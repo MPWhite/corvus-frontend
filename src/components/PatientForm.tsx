@@ -7,8 +7,8 @@ interface PatientFormProps {
 }
 
 const PatientForm: React.FC<PatientFormProps> = ({ onAddPatient }) => {
-    const initialState: Patient = {
-        id: String(Date.now()),
+    const defaultPatient: Patient = {
+        id: '',
         name: '',
         age: 0,
         gender: 'male',
@@ -25,10 +25,20 @@ const PatientForm: React.FC<PatientFormProps> = ({ onAddPatient }) => {
         medications: [],
         requiredDocuments: [],
         lastUpdated: new Date(),
-        notes: []
+        notes: [],
+        consultDate: new Date(),
+        urgencyLevel: 'medium',
+        priorityScore: 0,
+        ehrId: '',
+        referralType: 'external',
+        reviewStatus: 'PENDING_MA_REVIEW',
+        reviewNotes: [],
+        requiredActions: [],
+        surgicalHistory: [],
+        labResults: []
     };
 
-    const [formData, setFormData] = useState<Patient>(initialState);
+    const [formData, setFormData] = useState<Patient>(defaultPatient);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -55,8 +65,17 @@ const PatientForm: React.FC<PatientFormProps> = ({ onAddPatient }) => {
             medications: [],
             requiredDocuments: [],
             lastUpdated: new Date(),
-            notes: []
-            // Remove 'received' property as it's not in the Patient type
+            notes: [],
+            consultDate: new Date(),
+            urgencyLevel: 'medium',
+            priorityScore: 0,
+            ehrId: '',
+            referralType: 'external',
+            reviewStatus: 'PENDING_MA_REVIEW',
+            reviewNotes: [],
+            requiredActions: [],
+            surgicalHistory: [],
+            labResults: []
         };
         onAddPatient(newPatient);
     };

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Dialog } from '@headlessui/react';
-import { CalendarIcon, UserIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface TimeSlot {
     id: string;
@@ -18,6 +18,29 @@ interface SchedulingModalProps {
     setSelectedSlot: (slot: TimeSlot | null) => void;
 }
 
+// Mock available time slots
+const availableSlots: TimeSlot[] = [
+    {
+        id: '1',
+        date: new Date('2024-01-15T09:00:00'),
+        provider: 'Dr. Smith',
+        available: true
+    },
+    {
+        id: '2',
+        date: new Date('2024-01-15T14:00:00'),
+        provider: 'Dr. Johnson',
+        available: true
+    },
+    {
+        id: '3',
+        date: new Date('2024-01-16T10:30:00'),
+        provider: 'Dr. Smith',
+        available: true
+    },
+    // Add more slots as needed
+];
+
 const SchedulingModal: React.FC<SchedulingModalProps> = ({
     isOpen,
     onClose,
@@ -26,130 +49,67 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({
     selectedSlot,
     setSelectedSlot
 }) => {
-    const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-
-    // Generate slots only when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            const slots: TimeSlot[] = [];
-            const today = new Date();
-            const providers = ['Dr. Smith', 'Dr. Johnson', 'Dr. White'];
-            
-            // Generate next 5 business days slots
-            for (let i = 1; i <= 5; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() + i);
-                
-                // Skip weekends
-                if (date.getDay() === 0 || date.getDay() === 6) {
-                    continue;
-                }
-                
-                // Morning and afternoon slots
-                const times = [9, 11, 14, 16];
-                times.forEach(hour => {
-                    const slotDate = new Date(date);
-                    slotDate.setHours(hour, 0, 0, 0);
-                    
-                    slots.push({
-                        id: `slot-${slotDate.getTime()}`,
-                        date: slotDate,
-                        provider: providers[Math.floor(Math.random() * providers.length)],
-                        available: true // All slots available for demo
-                    });
-                });
-            }
-            
-            setAvailableSlots(slots);
-        }
-    }, [isOpen]);
-
-    // Clear selected slot when modal closes
-    useEffect(() => {
-        if (!isOpen) {
-            setSelectedSlot(null);
-        }
-    }, [isOpen, setSelectedSlot]);
-
-    const formatDate = (date: Date) => {
-        return {
-            day: date.toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-            }),
-            time: date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-            })
-        };
-    };
-
     return (
         <Dialog open={isOpen} onClose={onClose} className="relative z-50">
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
             
             <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="mx-auto w-full max-w-4xl rounded-lg bg-white p-6">
-                    <Dialog.Title className="text-lg font-semibold text-gray-900 mb-4">
-                        Schedule Consultation for {patientName}
-                    </Dialog.Title>
-                    
-                    <div className="mb-4">
+                <Dialog.Panel className="bg-white rounded-xl shadow-lg w-full max-w-md">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <Dialog.Title className="text-lg font-semibold text-gray-900">
+                                Schedule Consultation
+                            </Dialog.Title>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+                                <XMarkIcon className="h-5 w-5" />
+                            </button>
+                        </div>
                         <p className="text-sm text-gray-500">
-                            ⚡ Available time slots are synced with our scheduling platform in real-time
+                            Scheduling consultation for {patientName}
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                        {availableSlots.map(slot => {
-                            const { day, time } = formatDate(slot.date);
-                            return (
+                    <div className="p-4">
+                        <div className="space-y-4">
+                            {availableSlots.map((slot) => (
                                 <button
                                     key={slot.id}
-                                    className={`flex items-center justify-between p-4 rounded-lg border ${
+                                    className={`w-full p-3 rounded-lg border ${
                                         selectedSlot?.id === slot.id
                                             ? 'border-blue-500 bg-blue-50'
                                             : 'border-gray-200 hover:border-blue-300'
-                                    }`}
+                                    } transition-colors`}
                                     onClick={() => setSelectedSlot(slot)}
                                 >
-                                    <div className="flex items-center space-x-3">
-                                        <CalendarIcon className="h-5 w-5 text-blue-500" />
-                                        <div>
-                                            <p className="font-medium text-gray-900">{day}</p>
-                                            <p className="text-sm text-gray-600">{time}</p>
-                                            <div className="flex items-center text-xs text-gray-500 mt-1">
-                                                <UserIcon className="h-3 w-3 mr-1" />
+                                    <div className="flex items-center gap-3">
+                                        <CalendarIcon className="h-5 w-5 text-gray-400" />
+                                        <div className="text-left">
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {slot.date.toLocaleDateString()} at {slot.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
                                                 {slot.provider}
-                                            </div>
+                                            </p>
                                         </div>
                                     </div>
-                                    {selectedSlot?.id === slot.id && (
-                                        <CheckIcon className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                                    )}
                                 </button>
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="flex justify-end space-x-4">
+                    <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={() => selectedSlot && onConfirm(selectedSlot)}
                             disabled={!selectedSlot}
-                            className={`px-4 py-2 rounded-md ${
-                                selectedSlot
-                                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            }`}
+                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Confirm Appointment
+                            Confirm
                         </button>
                     </div>
                 </Dialog.Panel>

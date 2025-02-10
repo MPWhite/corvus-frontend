@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import PatientList from './PatientList';
 import PatientDetailModal from './PatientDetailModal';
 import { fetchPatients, updatePatientStatus } from '../services/api';
-import { Patient } from '../types/PatientTypes';
+import { Patient, User } from '../types/PatientTypes';
 import { 
     FunnelIcon, 
     ArrowPathIcon, 
@@ -11,13 +11,29 @@ import {
     UserGroupIcon,
     ClockIcon,
     CheckCircleIcon,
-    XCircleIcon
+    XCircleIcon,
+    UserCircleIcon,
+    MagnifyingGlassIcon,
+    ChevronDownIcon
 } from '@heroicons/react/24/outline';
+import { Switch } from '@headlessui/react';
 
-const TriageDashboard: React.FC = () => {
+interface TriageDashboardProps {
+    currentUser?: User;
+}
+
+interface SurgeonOption {
+    id: string;
+    name: string;
+    role: 'SURGEON';
+    email: string;
+}
+
+const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser }) => {
     const [patients, setPatients] = useState<Patient[]>([]);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         reviewStatus: 'all', // 'all' | 'needs-review' | 'reviewed'
         surgeryType: 'all',
@@ -25,6 +41,17 @@ const TriageDashboard: React.FC = () => {
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [isSurgeonView, setIsSurgeonView] = useState(currentUser?.role === 'SURGEON');
+    const [selectedSurgeon, setSelectedSurgeon] = useState<SurgeonOption | null>(
+        currentUser?.role === 'SURGEON' ? currentUser as SurgeonOption : null
+    );
+
+    const surgeons: SurgeonOption[] = [
+        { id: '1', name: 'Dr. Smith', role: 'SURGEON', email: 'dr.smith@hospital.com' },
+        { id: '2', name: 'Dr. Palmer', role: 'SURGEON', email: 'dr.palmer@hospital.com' },
+        { id: '3', name: 'Dr. Wilson', role: 'SURGEON', email: 'dr.wilson@hospital.com' },
+        { id: '4', name: 'Dr. Chen', role: 'SURGEON', email: 'dr.chen@hospital.com' }
+    ];
 
     const loadPatients = async () => {
         setLoading(true);
@@ -48,9 +75,14 @@ const TriageDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const handlePatientSelect = (patient: Patient) => {
-        console.log('Selected patient:', patient);
+    const handlePatientClick = (patient: Patient) => {
         setSelectedPatient(patient);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedPatient(null);
     };
 
     const handleStatusUpdate = async (status: string) => {
@@ -68,22 +100,48 @@ const TriageDashboard: React.FC = () => {
     const surgeryTypes = [...new Set(patients.map(p => p.surgeryType))];
     const providers = [...new Set(patients.map(p => p.assignedTo))];
 
-    // Apply filters and search
+    // Update the status options based on role
+    const getStatusOptions = () => {
+        if (isSurgeonView) {
+            return [
+                { value: 'all', label: 'All Statuses' },
+                { value: 'READY_FOR_SURGEON', label: 'Ready for Review' },
+                { value: 'SURGEON_APPROVED', label: 'Approved' },
+                { value: 'SCHEDULED', label: 'Scheduled' }
+            ];
+        }
+        return [
+            { value: 'all', label: 'All Statuses' },
+            { value: 'PENDING_MA_REVIEW', label: 'Pending MA Review' },
+            { value: 'NEEDS_MORE_INFO', label: 'Needs More Info' },
+            { value: 'READY_FOR_SURGEON', label: 'Ready for Surgeon' },
+            { value: 'SURGEON_APPROVED', label: 'Surgeon Approved' },
+            { value: 'SCHEDULED', label: 'Scheduled' }
+        ];
+    };
+
+    // Update the filtering logic
     const filteredPatients = patients.filter(patient => {
+        console.log('Filtering patient:', {
+            name: patient.name,
+            referringProvider: patient.referringProvider,
+            selectedProvider: filters.provider,
+            matches: filters.provider === 'all' || patient.referringProvider === filters.provider
+        });
+
         const matchesReviewStatus = 
-            filters.reviewStatus === 'all' ? true :
-            filters.reviewStatus === 'needs-review' ? patient.needsReview :
-            !patient.needsReview;
+            filters.reviewStatus === 'all' || patient.reviewStatus === filters.reviewStatus;
 
         const matchesSurgeryType = 
             filters.surgeryType === 'all' || patient.surgeryType === filters.surgeryType;
 
         const matchesProvider = 
-            filters.provider === 'all' || patient.assignedTo === filters.provider;
+            filters.provider === 'all' || patient.referringProvider === filters.provider;
 
-        const matchesSearch = 
+        const matchesSearch = searchTerm === '' || (
             patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            patient.surgeryType.toLowerCase().includes(searchTerm.toLowerCase());
+            patient.surgeryType.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
         return matchesReviewStatus && matchesSurgeryType && matchesProvider && matchesSearch;
     });
@@ -95,21 +153,42 @@ const TriageDashboard: React.FC = () => {
         reviewed: patients.filter(p => !p.needsReview).length
     };
 
-    // Separate patients by review status
-    const needsReviewPatients = filteredPatients
-        .filter(p => p.needsReview && p.isCandidate)
-        .sort((a, b) => b.priorityScore! - a.priorityScore!);
-    const reviewedPatients = filteredPatients
-        .filter(p => !p.needsReview && p.isCandidate)
-        .sort((a, b) => {
-            // Ensure both have valid scheduled dates
-            if (!a.scheduledDate || !b.scheduledDate) return 0;
-            // Sort by earliest scheduled date first
-            return new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime();
+    // Update the patient filtering logic based on view
+    const getFilteredLists = () => {
+        // Step 1: Apply surgeon filter first
+        let filteredPatients = patients;
+        if (filters.provider !== 'all') {
+            filteredPatients = patients.filter(p => p.assignedTo === filters.provider);
+            console.log(`Filtering for surgeon ${filters.provider}:`, filteredPatients.length);
+        }
+
+        // Step 2: Create lists by status
+        const lists = {
+            pendingMAReview: filteredPatients.filter(p => p.reviewStatus === 'PENDING_MA_REVIEW'),
+            readyForSurgeon: filteredPatients.filter(p => p.reviewStatus === 'READY_FOR_SURGEON'),
+            needsMoreInfo: filteredPatients.filter(p => p.reviewStatus === 'NEEDS_MORE_INFO'),
+            surgeonApproved: filteredPatients.filter(p => p.reviewStatus === 'SURGEON_APPROVED'),
+            scheduled: filteredPatients.filter(p => p.reviewStatus === 'SCHEDULED')
+        };
+
+        // Step 3: Additional document check for ready for surgeon
+        lists.readyForSurgeon = lists.readyForSurgeon.filter(p => 
+            p.requiredDocuments?.every(d => d.received)
+        );
+
+        // Debug logging
+        console.log('=== Filtered Lists ===', {
+            surgeon: filters.provider,
+            total: filteredPatients.length,
+            ready: lists.readyForSurgeon.length,
+            pending: lists.pendingMAReview.length,
+            needsInfo: lists.needsMoreInfo.length,
+            approved: lists.surgeonApproved.length,
+            scheduled: lists.scheduled.length
         });
-    const rejectedPatients = filteredPatients
-        .filter(p => !p.needsReview && !p.isCandidate)
-        .sort((a, b) => new Date(b.reviewedAt!).getTime() - new Date(a.reviewedAt!).getTime());
+
+        return lists;
+    };
 
     const formatScheduledDate = (dateString: string | Date) => {
         try {
@@ -129,6 +208,19 @@ const TriageDashboard: React.FC = () => {
             console.error('Error formatting date:', error);
             return 'Invalid Date';
         }
+    };
+
+    // Update filters to match ReviewStatus type
+    const pendingReview = patients?.filter(p => p.reviewStatus === 'PENDING_MA_REVIEW') ?? [];
+    const readyForSurgeon = patients?.filter(p => p.reviewStatus === 'READY_FOR_SURGEON') ?? [];
+    const needsMoreInfo = patients?.filter(p => p.reviewStatus === 'NEEDS_MORE_INFO') ?? [];
+    const scheduled = patients?.filter(p => p.reviewStatus === 'SCHEDULED') ?? [];
+
+    // Add type safety for dates
+    const sortByDate = (a: Patient, b: Patient) => {
+        const dateA = a.scheduledDate?.getTime() ?? 0;
+        const dateB = b.scheduledDate?.getTime() ?? 0;
+        return dateB - dateA;
     };
 
     if (loading) {
@@ -162,24 +254,68 @@ const TriageDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 shadow">
-                <div className="px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">
-                                <span className="text-blue-200 ml-2 text-xl font-normal">
-                                    Patient Triage Dashboard
-                                </span>
-                            </h1>
+            <div className="bg-white border-b">
+                <div className="px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-16 items-center justify-between">
+                        <div className="flex items-center">
+                            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                Surgical Triage
+                            </div>
                         </div>
-                        <button 
-                            onClick={loadPatients}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-md hover:bg-white/20 transition-colors"
-                            disabled={loading}
-                        >
-                            <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </button>
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                                <span className={`text-sm ${!isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
+                                    MA View
+                                </span>
+                                <Switch
+                                    checked={isSurgeonView}
+                                    onChange={setIsSurgeonView}
+                                    className={`${
+                                        isSurgeonView ? 'bg-blue-600' : 'bg-gray-200'
+                                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                                >
+                                    <span className="sr-only">Toggle view</span>
+                                    <span
+                                        className={`${
+                                            isSurgeonView ? 'translate-x-6' : 'translate-x-1'
+                                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                    />
+                                </Switch>
+                                <span className={`text-sm ${isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
+                                    Surgeon View
+                                </span>
+                            </div>
+                            <div className="relative">
+                                {currentUser?.role !== 'SURGEON' && (
+                                    <select
+                                        value={selectedSurgeon?.id || ''}
+                                        onChange={(e) => {
+                                            const surgeon = surgeons.find(s => s.id === e.target.value);
+                                            setSelectedSurgeon(surgeon || null);
+                                        }}
+                                        className="appearance-none bg-white pl-3 pr-10 py-2 text-sm text-gray-700 rounded-md border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="">All Surgeons</option>
+                                        {surgeons.map(surgeon => (
+                                            <option key={surgeon.id} value={surgeon.id}>
+                                                {surgeon.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-500">
+                                <UserCircleIcon className="h-5 w-5" />
+                                <span>{currentUser?.name}</span>
+                            </div>
+                            <button 
+                                onClick={loadPatients}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
+                            >
+                                <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -187,65 +323,77 @@ const TriageDashboard: React.FC = () => {
             {/* Stats */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-lg shadow p-6">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-6 border border-blue-100">
                         <div className="flex items-center">
-                            <UserGroupIcon className="h-12 w-12 text-blue-500" />
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                                <UserGroupIcon className="h-8 w-8 text-blue-600" />
+                            </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Total Patients</p>
-                                <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
+                                <p className="text-sm font-medium text-blue-600">Total Patients</p>
+                                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+                                <p className="text-xs text-blue-500 mt-1">+12% from last week</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-lg shadow p-6">
+                    
+                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm p-6 border border-yellow-100">
                         <div className="flex items-center">
-                            <ClockIcon className="h-12 w-12 text-yellow-500" />
+                            <div className="p-2 bg-yellow-100 rounded-lg">
+                                <ClockIcon className="h-8 w-8 text-yellow-600" />
+                            </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Needs Review</p>
-                                <p className="text-2xl font-semibold text-gray-900">{stats.needsReview}</p>
+                                <p className="text-sm font-medium text-yellow-600">Needs Review</p>
+                                <p className="text-2xl font-bold text-yellow-900">{stats.needsReview}</p>
+                                <p className="text-xs text-yellow-500 mt-1">4 urgent cases</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-lg shadow p-6">
+                    
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm p-6 border border-green-100">
                         <div className="flex items-center">
-                            <ChartBarIcon className="h-12 w-12 text-green-500" />
+                            <div className="p-2 bg-green-100 rounded-lg">
+                                <ChartBarIcon className="h-8 w-8 text-green-600" />
+                            </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Reviewed</p>
-                                <p className="text-2xl font-semibold text-gray-900">{stats.reviewed}</p>
+                                <p className="text-sm font-medium text-green-600">Reviewed</p>
+                                <p className="text-2xl font-bold text-green-900">{stats.reviewed}</p>
+                                <p className="text-xs text-green-500 mt-1">On track this week</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-lg shadow mb-6">
-                    <div className="p-6">
+                <div className="bg-white rounded-xl shadow-sm mb-6 border border-gray-100">
+                    <div className="p-4">
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                                <input
-                                    type="text"
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Search patients..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                                <div className="relative">
+                                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        className="w-full pl-10 pr-4 py-2 border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Search patients..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Review Status</label>
+                            <div className="flex gap-4">
                                 <select
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
                                     value={filters.reviewStatus}
                                     onChange={(e) => setFilters({...filters, reviewStatus: e.target.value})}
                                 >
-                                    <option value="all">All Statuses</option>
-                                    <option value="needs-review">Needs Review</option>
-                                    <option value="reviewed">Reviewed</option>
+                                    {getStatusOptions().map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Surgery Type</label>
+                                
                                 <select
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
                                     value={filters.surgeryType}
                                     onChange={(e) => setFilters({...filters, surgeryType: e.target.value})}
                                 >
@@ -255,114 +403,73 @@ const TriageDashboard: React.FC = () => {
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Provider</label>
-                                <select
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                    value={filters.provider}
-                                    onChange={(e) => setFilters({...filters, provider: e.target.value})}
-                                >
-                                    <option value="all">All Providers</option>
-                                    {providers.map(provider => (
-                                        <option key={provider} value={provider}>{provider}</option>
-                                    ))}
-                                </select>
-                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Needs Review Section - Make it more prominent */}
-                <div className="mb-12">
-                    <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-6">
-                        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
-                            <ClockIcon className="h-8 w-8 text-blue-500 mr-2" />
-                            Needs Review ({needsReviewPatients.length})
-                        </h2>
-                        <PatientList 
-                            patients={needsReviewPatients}
-                            onPatientSelect={handlePatientSelect}
-                            highlight={true}
-                        />
-                    </div>
-                </div>
-
-                {/* Reviewed Sections - Grid layout for Scheduled and Rejected */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Reviewed & Scheduled Section */}
-                    <div className="bg-gray-50 rounded-lg p-6">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                            <CheckCircleIcon className="h-6 w-6 text-green-500 mr-2" />
-                            Reviewed & Scheduled ({reviewedPatients.length})
-                        </h2>
-                        <div className="space-y-4">
-                            {reviewedPatients.map(patient => (
-                                <div 
-                                    key={patient.id}
-                                    className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer"
-                                    onClick={() => handlePatientSelect(patient)}
-                                >
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-medium text-gray-900">{patient.name}</h3>
-                                            <p className="text-sm text-gray-500">{patient.surgeryType}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-medium text-green-600">
-                                                Scheduled: {patient.scheduledDate ? formatScheduledDate(patient.scheduledDate) : 'Not Scheduled'}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                Reviewed: {new Date(patient.reviewedAt!).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Rejected Section */}
-                    <div className="bg-gray-50 rounded-lg p-6">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                            <XCircleIcon className="h-6 w-6 text-red-500 mr-2" />
-                            Not Eligible ({rejectedPatients.length})
-                        </h2>
-                        <div className="space-y-4">
-                            {rejectedPatients.map(patient => (
-                                <div 
-                                    key={patient.id}
-                                    className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer"
-                                    onClick={() => handlePatientSelect(patient)}
-                                >
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-medium text-gray-900">{patient.name}</h3>
-                                            <p className="text-sm text-gray-500">{patient.surgeryType}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-gray-500">
-                                                Reviewed: {new Date(patient.reviewedAt!).toLocaleDateString()}
-                                            </p>
-                                            <p className="text-xs text-red-500">
-                                                Not eligible for surgery
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                {/* Patient Lists */}
+                <div className="space-y-6">
+                    {isSurgeonView ? (
+                        // Surgeon View
+                        <>
+                            {getFilteredLists().readyForSurgeon?.length > 0 && (
+                                <PatientList
+                                    title="Ready for Review"
+                                    patients={getFilteredLists().readyForSurgeon}
+                                    onPatientSelect={handlePatientClick}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        // MA View
+                        <>
+                            {getFilteredLists().pendingMAReview?.length > 0 && (
+                                <PatientList
+                                    title="Pending MA Review"
+                                    patients={getFilteredLists().pendingMAReview}
+                                    onPatientSelect={handlePatientClick}
+                                />
+                            )}
+                            {getFilteredLists().readyForSurgeon.length > 0 && (
+                                <PatientList
+                                    title="READY_FOR_SURGEON"
+                                    patients={getFilteredLists().readyForSurgeon}
+                                    onPatientSelect={handlePatientClick}
+                                />
+                            )}
+                            {getFilteredLists().needsMoreInfo.length > 0 && (
+                                <PatientList
+                                    title="NEEDS_MORE_INFO"
+                                    patients={getFilteredLists().needsMoreInfo}
+                                    onPatientSelect={handlePatientClick}
+                                />
+                            )}
+                            {getFilteredLists().surgeonApproved.length > 0 && (
+                                <PatientList
+                                    title="SURGEON_APPROVED"
+                                    patients={getFilteredLists().surgeonApproved}
+                                    onPatientSelect={handlePatientClick}
+                                />
+                            )}
+                            {getFilteredLists().scheduled.length > 0 && (
+                                <PatientList
+                                    title="SCHEDULED"
+                                    patients={getFilteredLists().scheduled}
+                                    onPatientSelect={handlePatientClick}
+                                />
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
 
             {/* Modal */}
             {selectedPatient && (
-                <PatientDetailModal 
+                <PatientDetailModal
                     patient={selectedPatient}
-                    onClose={() => {
-                        console.log('Closing modal');
-                        setSelectedPatient(null);
-                    }}
+                    currentUser={currentUser}
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
                     onUpdateStatus={handleStatusUpdate}
                 />
             )}
