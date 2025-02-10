@@ -1,7 +1,7 @@
 // src/services/api.ts
 import { Patient } from '../types/PatientTypes';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+const API_URL = '/api'
 
 const mockPatient: Patient = {
     id: '1',
