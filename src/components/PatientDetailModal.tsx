@@ -20,6 +20,7 @@ import {AIChat} from "./AIChatComponent";
 import { Dialog } from '@headlessui/react';
 import PatientTabs from './PatientTabs';
 import MAReviewForm from './MAReviewForm';
+import AIAssistantPanel from './AIAssistantPanel';
 
 interface PatientDetailModalProps {
     patient: Patient;
@@ -206,13 +207,15 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+        <Dialog open={isOpen} onClose={onClose}>
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
             
-            <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="bg-gray-50 rounded-xl shadow-lg w-[1024px] h-[768px]">
+            <div className="fixed inset-0 flex items-center justify-start pl-8">
+                <Dialog.Panel className="relative bg-gray-50 w-[calc(100vw-30rem)] h-[calc(100vh-6rem)] 
+                    rounded-lg shadow-xl overflow-hidden my-8"
+                >
                     {/* Header */}
-                    <div className="flex justify-between items-center px-6 py-4 bg-blue-500 rounded-t-xl">
+                    <div className="flex justify-between items-center px-6 py-4 bg-blue-500 rounded-t-lg">
                         <div>
                             <Dialog.Title className="text-xl font-semibold text-white">
                                 {patient.name}
@@ -270,8 +273,8 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 h-[calc(768px-80px)] overflow-y-auto">
-                        <div className="space-y-6">
+                    <div className="p-6 h-[calc(100vh-12rem)] overflow-y-auto">
+                        <div className="max-w-4xl mx-auto space-y-6">
                             <PatientTabs patient={patient} />
                             
                             {/* Add MA Review Form */}
@@ -279,9 +282,7 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
                                 <MAReviewForm 
                                     patient={patient}
                                     onSubmit={async (data) => {
-                                        // Handle the MA review submission
                                         await onUpdateStatus(data.status);
-                                        // You might want to handle the note separately
                                         console.log('Review note:', data.note);
                                     }}
                                 />

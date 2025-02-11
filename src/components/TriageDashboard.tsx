@@ -20,6 +20,7 @@ import { Switch } from '@headlessui/react';
 
 interface TriageDashboardProps {
     currentUser?: User;
+    onPatientSelect: (patient: Patient | null) => void;
 }
 
 interface SurgeonOption {
@@ -29,7 +30,7 @@ interface SurgeonOption {
     email: string;
 }
 
-const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser }) => {
+const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatientSelect }) => {
     const [patients, setPatients] = useState<Patient[]>([]);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -252,222 +253,232 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser }) => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b">
-                <div className="px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 items-center justify-between">
-                        <div className="flex items-center">
-                            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Surgical Triage
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3">
-                                <span className={`text-sm ${!isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
-                                    MA View
-                                </span>
-                                <Switch
-                                    checked={isSurgeonView}
-                                    onChange={setIsSurgeonView}
-                                    className={`${
-                                        isSurgeonView ? 'bg-blue-600' : 'bg-gray-200'
-                                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                                >
-                                    <span className="sr-only">Toggle view</span>
-                                    <span
-                                        className={`${
-                                            isSurgeonView ? 'translate-x-6' : 'translate-x-1'
-                                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                                    />
-                                </Switch>
-                                <span className={`text-sm ${isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
-                                    Surgeon View
-                                </span>
-                            </div>
-                            <div className="relative">
-                                {currentUser?.role !== 'SURGEON' && (
-                                    <select
-                                        value={selectedSurgeon?.id || ''}
-                                        onChange={(e) => {
-                                            const surgeon = surgeons.find(s => s.id === e.target.value);
-                                            setSelectedSurgeon(surgeon || null);
-                                        }}
-                                        className="appearance-none bg-white pl-3 pr-10 py-2 text-sm text-gray-700 rounded-md border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        <div className="min-h-screen bg-gray-100">
+            {/* Navbar */}
+            <nav className="fixed top-0 left-0 right-0 z-30 bg-blue-600 text-white shadow-md">
+                {/* ... navbar content ... */}
+            </nav>
+
+            {/* Main Content - Add padding-right to account for AI Assistant */}
+            <div className="pt-16 pr-96">
+                <div className="container mx-auto p-6">
+                    {/* Header */}
+                    <div className="bg-white border-b">
+                        <div className="px-4 sm:px-6 lg:px-8">
+                            <div className="flex h-16 items-center justify-between">
+                                <div className="flex items-center">
+                                    <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                        Surgical Triage
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-sm ${!isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
+                                            MA View
+                                        </span>
+                                        <Switch
+                                            checked={isSurgeonView}
+                                            onChange={setIsSurgeonView}
+                                            className={`${
+                                                isSurgeonView ? 'bg-blue-600' : 'bg-gray-200'
+                                            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                                        >
+                                            <span className="sr-only">Toggle view</span>
+                                            <span
+                                                className={`${
+                                                    isSurgeonView ? 'translate-x-6' : 'translate-x-1'
+                                                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                            />
+                                        </Switch>
+                                        <span className={`text-sm ${isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
+                                            Surgeon View
+                                        </span>
+                                    </div>
+                                    <div className="relative">
+                                        {currentUser?.role !== 'SURGEON' && (
+                                            <select
+                                                value={selectedSurgeon?.id || ''}
+                                                onChange={(e) => {
+                                                    const surgeon = surgeons.find(s => s.id === e.target.value);
+                                                    setSelectedSurgeon(surgeon || null);
+                                                }}
+                                                className="appearance-none bg-white pl-3 pr-10 py-2 text-sm text-gray-700 rounded-md border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">All Surgeons</option>
+                                                {surgeons.map(surgeon => (
+                                                    <option key={surgeon.id} value={surgeon.id}>
+                                                        {surgeon.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-gray-500">
+                                        <UserCircleIcon className="h-5 w-5" />
+                                        <span>{currentUser?.name}</span>
+                                    </div>
+                                    <button 
+                                        onClick={loadPatients}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
                                     >
-                                        <option value="">All Surgeons</option>
-                                        {surgeons.map(surgeon => (
-                                            <option key={surgeon.id} value={surgeon.id}>
-                                                {surgeon.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <UserCircleIcon className="h-5 w-5" />
-                                <span>{currentUser?.name}</span>
-                            </div>
-                            <button 
-                                onClick={loadPatients}
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
-                            >
-                                <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-                                Refresh
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-6 border border-blue-100">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <UserGroupIcon className="h-8 w-8 text-blue-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-blue-600">Total Patients</p>
-                                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
-                                <p className="text-xs text-blue-500 mt-1">+12% from last week</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm p-6 border border-yellow-100">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-yellow-100 rounded-lg">
-                                <ClockIcon className="h-8 w-8 text-yellow-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-yellow-600">Needs Review</p>
-                                <p className="text-2xl font-bold text-yellow-900">{stats.needsReview}</p>
-                                <p className="text-xs text-yellow-500 mt-1">4 urgent cases</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm p-6 border border-green-100">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <ChartBarIcon className="h-8 w-8 text-green-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-green-600">Reviewed</p>
-                                <p className="text-2xl font-bold text-green-900">{stats.reviewed}</p>
-                                <p className="text-xs text-green-500 mt-1">On track this week</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Filters */}
-                <div className="bg-white rounded-xl shadow-sm mb-6 border border-gray-100">
-                    <div className="p-4">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1">
-                                <div className="relative">
-                                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        className="w-full pl-10 pr-4 py-2 border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Search patients..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
+                                        <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                                        Refresh
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex gap-4">
-                                <select
-                                    className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
-                                    value={filters.reviewStatus}
-                                    onChange={(e) => setFilters({...filters, reviewStatus: e.target.value})}
-                                >
-                                    {getStatusOptions().map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                
-                                <select
-                                    className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
-                                    value={filters.surgeryType}
-                                    onChange={(e) => setFilters({...filters, surgeryType: e.target.value})}
-                                >
-                                    <option value="all">All Types</option>
-                                    {surgeryTypes.map(type => (
-                                        <option key={type} value={type}>{type}</option>
-                                    ))}
-                                </select>
+                        </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-6 border border-blue-100">
+                                <div className="flex items-center">
+                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                        <UserGroupIcon className="h-8 w-8 text-blue-600" />
+                                    </div>
+                                    <div className="ml-4">
+                                        <p className="text-sm font-medium text-blue-600">Total Patients</p>
+                                        <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+                                        <p className="text-xs text-blue-500 mt-1">+12% from last week</p>
+                                    </div>
+                                </div>
                             </div>
+                            
+                            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm p-6 border border-yellow-100">
+                                <div className="flex items-center">
+                                    <div className="p-2 bg-yellow-100 rounded-lg">
+                                        <ClockIcon className="h-8 w-8 text-yellow-600" />
+                                    </div>
+                                    <div className="ml-4">
+                                        <p className="text-sm font-medium text-yellow-600">Needs Review</p>
+                                        <p className="text-2xl font-bold text-yellow-900">{stats.needsReview}</p>
+                                        <p className="text-xs text-yellow-500 mt-1">4 urgent cases</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm p-6 border border-green-100">
+                                <div className="flex items-center">
+                                    <div className="p-2 bg-green-100 rounded-lg">
+                                        <ChartBarIcon className="h-8 w-8 text-green-600" />
+                                    </div>
+                                    <div className="ml-4">
+                                        <p className="text-sm font-medium text-green-600">Reviewed</p>
+                                        <p className="text-2xl font-bold text-green-900">{stats.reviewed}</p>
+                                        <p className="text-xs text-green-500 mt-1">On track this week</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Filters */}
+                        <div className="bg-white rounded-xl shadow-sm mb-6 border border-gray-100">
+                            <div className="p-4">
+                                <div className="flex flex-col md:flex-row gap-4">
+                                    <div className="flex-1">
+                                        <div className="relative">
+                                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                className="w-full pl-10 pr-4 py-2 border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="Search patients..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <select
+                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
+                                            value={filters.reviewStatus}
+                                            onChange={(e) => setFilters({...filters, reviewStatus: e.target.value})}
+                                        >
+                                            {getStatusOptions().map(option => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        
+                                        <select
+                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
+                                            value={filters.surgeryType}
+                                            onChange={(e) => setFilters({...filters, surgeryType: e.target.value})}
+                                        >
+                                            <option value="all">All Types</option>
+                                            {surgeryTypes.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Patient Lists */}
+                        <div className="space-y-6">
+                            {isSurgeonView ? (
+                                // Surgeon View
+                                <>
+                                    {getFilteredLists().readyForSurgeon?.length > 0 && (
+                                        <PatientList
+                                            title="Ready for Review"
+                                            patients={getFilteredLists().readyForSurgeon}
+                                            onPatientSelect={handlePatientClick}
+                                        />
+                                    )}
+                                </>
+                            ) : (
+                                // MA View
+                                <>
+                                    {getFilteredLists().pendingMAReview?.length > 0 && (
+                                        <PatientList
+                                            title="Pending MA Review"
+                                            patients={getFilteredLists().pendingMAReview}
+                                            onPatientSelect={handlePatientClick}
+                                        />
+                                    )}
+                                    {getFilteredLists().readyForSurgeon.length > 0 && (
+                                        <PatientList
+                                            title="READY_FOR_SURGEON"
+                                            patients={getFilteredLists().readyForSurgeon}
+                                            onPatientSelect={handlePatientClick}
+                                        />
+                                    )}
+                                    {getFilteredLists().needsMoreInfo.length > 0 && (
+                                        <PatientList
+                                            title="NEEDS_MORE_INFO"
+                                            patients={getFilteredLists().needsMoreInfo}
+                                            onPatientSelect={handlePatientClick}
+                                        />
+                                    )}
+                                    {getFilteredLists().surgeonApproved.length > 0 && (
+                                        <PatientList
+                                            title="SURGEON_APPROVED"
+                                            patients={getFilteredLists().surgeonApproved}
+                                            onPatientSelect={handlePatientClick}
+                                        />
+                                    )}
+                                    {getFilteredLists().scheduled.length > 0 && (
+                                        <PatientList
+                                            title="SCHEDULED"
+                                            patients={getFilteredLists().scheduled}
+                                            onPatientSelect={handlePatientClick}
+                                        />
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
-
-                {/* Patient Lists */}
-                <div className="space-y-6">
-                    {isSurgeonView ? (
-                        // Surgeon View
-                        <>
-                            {getFilteredLists().readyForSurgeon?.length > 0 && (
-                                <PatientList
-                                    title="Ready for Review"
-                                    patients={getFilteredLists().readyForSurgeon}
-                                    onPatientSelect={handlePatientClick}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        // MA View
-                        <>
-                            {getFilteredLists().pendingMAReview?.length > 0 && (
-                                <PatientList
-                                    title="Pending MA Review"
-                                    patients={getFilteredLists().pendingMAReview}
-                                    onPatientSelect={handlePatientClick}
-                                />
-                            )}
-                            {getFilteredLists().readyForSurgeon.length > 0 && (
-                                <PatientList
-                                    title="READY_FOR_SURGEON"
-                                    patients={getFilteredLists().readyForSurgeon}
-                                    onPatientSelect={handlePatientClick}
-                                />
-                            )}
-                            {getFilteredLists().needsMoreInfo.length > 0 && (
-                                <PatientList
-                                    title="NEEDS_MORE_INFO"
-                                    patients={getFilteredLists().needsMoreInfo}
-                                    onPatientSelect={handlePatientClick}
-                                />
-                            )}
-                            {getFilteredLists().surgeonApproved.length > 0 && (
-                                <PatientList
-                                    title="SURGEON_APPROVED"
-                                    patients={getFilteredLists().surgeonApproved}
-                                    onPatientSelect={handlePatientClick}
-                                />
-                            )}
-                            {getFilteredLists().scheduled.length > 0 && (
-                                <PatientList
-                                    title="SCHEDULED"
-                                    patients={getFilteredLists().scheduled}
-                                    onPatientSelect={handlePatientClick}
-                                />
-                            )}
-                        </>
-                    )}
-                </div>
             </div>
 
-            {/* Modal */}
+            {/* Patient Detail Modal */}
             {selectedPatient && (
                 <PatientDetailModal
                     patient={selectedPatient}
-                    currentUser={currentUser!}
+                    currentUser={currentUser}
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     onUpdateStatus={handleStatusUpdate}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tab } from '@headlessui/react';
 import { Patient } from '../types/PatientTypes';
-import { ClipboardDocumentListIcon, DocumentTextIcon, ClockIcon, BeakerIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentListIcon, DocumentTextIcon, ClockIcon, BeakerIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import PatientOverviewTab from './PatientOverviewTab';
 import PatientMedicalHistoryTab from './PatientMedicalHistoryTab';
 import PatientDocumentsTab from './PatientDocumentsTab';
@@ -27,7 +27,7 @@ const PatientTabs: React.FC<PatientTabsProps> = ({ patient }) => {
         { name: 'Overview', icon: ClipboardDocumentListIcon },
         { name: 'Medical History', icon: BeakerIcon },
         { name: 'Documents', icon: DocumentTextIcon },
-        { name: 'AI Assessment', icon: ChatBubbleBottomCenterTextIcon },
+        { name: 'AI Workflow', icon: SparklesIcon },
     ];
 
     return (
