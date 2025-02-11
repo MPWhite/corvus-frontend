@@ -1,6 +1,6 @@
 import React from 'react';
 import { Patient } from '../types/PatientTypes';
-import { ChevronRightIcon, ClockIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, ClockIcon, UserCircleIcon, SparklesIcon, LightBulbIcon } from '@heroicons/react/24/outline';
 
 interface PatientCardProps {
     patient: Patient;
@@ -31,6 +31,26 @@ const getStatusDisplay = (status: string) => {
     return status.split('_').map(word => 
         word.charAt(0) + word.slice(1).toLowerCase()
     ).join(' ');
+};
+
+const AIAssistantPreview: React.FC<{ patient: Patient }> = ({ patient }) => {
+    return (
+        <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2 mb-2">
+                <SparklesIcon className="h-5 w-5 text-blue-600" />
+                <h4 className="font-medium text-blue-900">AI Assistant Insights</h4>
+            </div>
+            <div className="space-y-2">
+                {/* Quick action items */}
+                <div className="flex items-center gap-2 text-sm">
+                    <LightBulbIcon className="h-4 w-4 text-amber-500" />
+                    <span className="text-gray-700">
+                        {getTopPriorityInsight(patient)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const PatientCard: React.FC<PatientCardProps> = ({ 
@@ -127,6 +147,11 @@ const PatientCard: React.FC<PatientCardProps> = ({
                             </span>
                         </div>
                     </div>
+                </div>
+
+                <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                    <SparklesIcon className="h-4 w-4 text-blue-500" />
+                    <span>AI Assistant: 2 suggestions available</span>
                 </div>
             </div>
         </div>

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TriageDashboard from './components/TriageDashboard';
-import { User } from './types/PatientTypes';
+import AIAssistantPanel from './components/AIAssistantPanel';
+import { User, Patient } from './types/PatientTypes';
 
 // Mock user for development
 const mockUser: User = {
@@ -11,9 +12,21 @@ const mockUser: User = {
 };
 
 function App() {
+    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+
     return (
         <div className="App">
-            <TriageDashboard currentUser={mockUser} />
+            <TriageDashboard 
+                currentUser={mockUser} 
+                onPatientSelect={setSelectedPatient}
+            />
+            {/* AI Assistant Panel */}
+            <AIAssistantPanel 
+                patient={selectedPatient}
+                onAction={(action) => {
+                    console.log('AI Assistant action:', action);
+                }}
+            />
         </div>
     );
 }
