@@ -260,10 +260,10 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
             </nav>
 
             {/* Main Content - Add padding-right to account for AI Assistant */}
-            <div className="pt-16 pr-96">
-                <div className="container mx-auto p-6">
+            <div className="pt-0 pr-96">
+                <div className="container mx-auto">
                     {/* Header */}
-                    <div className="bg-white border-b">
+                    <div className="bg-white border-b  sticky top-0 z-50">
                         <div className="px-4 sm:px-6 lg:px-8">
                             <div className="flex h-16 items-center justify-between">
                                 <div className="flex items-center">

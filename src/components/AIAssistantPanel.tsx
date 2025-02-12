@@ -594,7 +594,6 @@ const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({ patient, onAction }
         <div 
             className={`fixed right-0 top-0 h-screen bg-white border-l border-gray-200 shadow-lg 
                 transition-all duration-300 ease-in-out z-40 flex flex-col ${isCollapsed ? 'w-16' : 'w-96'}`}
-            style={{ marginTop: '64px' }}
         >
             {/* Header */}
             <div className="flex-none h-16 border-b flex items-center justify-between px-4 bg-gradient-to-r from-blue-600 to-blue-700">
