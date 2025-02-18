@@ -1,34 +1,82 @@
 import React from 'react';
 import { Tab } from '@headlessui/react';
-import { Patient } from '../types/PatientTypes';
+import { Patient, User } from '../types/PatientTypes';
 import { ClipboardDocumentListIcon, DocumentTextIcon, ClockIcon, BeakerIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import PatientOverviewTab from './PatientOverviewTab';
 import PatientMedicalHistoryTab from './PatientMedicalHistoryTab';
 import PatientDocumentsTab from './PatientDocumentsTab';
 import { AIChat } from './AIChatComponent';
 import AIAssessmentTab from './AIAssessmentTab';
+import MAReviewForm from './MAReviewForm';
+import SurgeonReviewForm from './SurgeonReviewForm';
 
 interface PatientTabsProps {
     patient: Patient;
+    currentUser: User;
+    onUpdateStatus: (status: string) => void;
 }
 
 function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ');
 }
 
-const PatientTabs: React.FC<PatientTabsProps> = ({ patient }) => {
-    console.log('PatientTabs - Patient Data:', {
-        name: patient.name,
-        medicalHistory: patient.medicalHistory,
-        medications: patient.medications
+const PatientTabs: React.FC<PatientTabsProps> = ({ patient, currentUser, onUpdateStatus }) => {
+    console.log('PatientTabs - Raw Props:', {
+        currentUser,
+        patientStatus: patient.reviewStatus,
+        patientId: patient.id,
+        patientName: patient.name
+    });
+
+    // Show review tabs based on patient status, not user role
+    const showMAReviewTab = patient.reviewStatus === 'PENDING_MA_REVIEW';
+    const showSurgeonReviewTab = patient.reviewStatus === 'READY_FOR_SURGEON';
+
+    console.log('PatientTabs - Visibility:', {
+        patientStatus: patient.reviewStatus,
+        showMAReviewTab,
+        showSurgeonReviewTab
     });
 
     const tabs = [
-        { name: 'Overview', icon: ClipboardDocumentListIcon },
-        { name: 'Medical History', icon: BeakerIcon },
-        { name: 'Documents', icon: DocumentTextIcon },
-        { name: 'AI Workflow', icon: SparklesIcon },
+        { 
+            name: 'Overview', 
+            icon: ClipboardDocumentListIcon,
+            component: <PatientOverviewTab patient={patient} />
+        },
+        { 
+            name: 'Medical History', 
+            icon: BeakerIcon,
+            component: <PatientMedicalHistoryTab patient={patient} />
+        },
+        { 
+            name: 'Documents', 
+            icon: DocumentTextIcon,
+            component: <PatientDocumentsTab patient={patient} />
+        },
+        { 
+            name: 'AI Assessment',
+            icon: SparklesIcon,
+            component: <AIAssessmentTab patient={patient} />
+        }
     ];
+
+    // Add review tabs based on patient status only
+    if (showMAReviewTab) {
+        tabs.push({
+            name: 'MA Review',
+            icon: ClipboardDocumentListIcon,
+            component: <MAReviewForm patient={patient} onSubmit={onUpdateStatus} />
+        });
+    }
+
+    if (showSurgeonReviewTab) {
+        tabs.push({
+            name: 'Surgeon Review',
+            icon: ClipboardDocumentListIcon,
+            component: <SurgeonReviewForm patient={patient} onSubmit={onUpdateStatus} />
+        });
+    }
 
     return (
         <div className="w-full">
@@ -55,18 +103,17 @@ const PatientTabs: React.FC<PatientTabsProps> = ({ patient }) => {
                     ))}
                 </Tab.List>
                 <Tab.Panels className="mt-2">
-                    <Tab.Panel>
-                        <PatientOverviewTab patient={patient} />
-                    </Tab.Panel>
-                    <Tab.Panel>
-                        <PatientMedicalHistoryTab patient={patient} />
-                    </Tab.Panel>
-                    <Tab.Panel>
-                        <PatientDocumentsTab patient={patient} />
-                    </Tab.Panel>
-                    <Tab.Panel>
-                        <AIAssessmentTab patient={patient} />
-                    </Tab.Panel>
+                    {tabs.map((tab, idx) => (
+                        <Tab.Panel
+                            key={idx}
+                            className={classNames(
+                                'rounded-xl bg-white p-3',
+                                'ring-white/60 ring-offset-2 focus:outline-none focus:ring-2'
+                            )}
+                        >
+                            {tab.component}
+                        </Tab.Panel>
+                    ))}
                 </Tab.Panels>
             </Tab.Group>
         </div>

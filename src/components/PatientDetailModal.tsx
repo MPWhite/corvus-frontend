@@ -19,8 +19,8 @@ import ReviewStepper from './ReviewStepper';
 import {AIChat} from "./AIChatComponent";
 import { Dialog } from '@headlessui/react';
 import PatientTabs from './PatientTabs';
-import MAReviewForm from './MAReviewForm';
 import AIAssistantPanel from './AIAssistantPanel';
+import { Button } from '@mui/material';
 
 interface PatientDetailModalProps {
     patient: Patient;
@@ -75,10 +75,11 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
     onUpdateStatus
 }) => {
     console.log('PatientDetailModal - Full Patient Data:', patient);
+    console.log('Current user role:', currentUser.role);
+    console.log('Patient review status:', patient.reviewStatus);
     const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [isScheduled, setIsScheduled] = useState(!!patient.scheduledDate);
-    const [isReviewed, setIsReviewed] = useState(!!patient.reviewedAt);
 
     const openEHR = () => {
         if (!patient?.ehrId) return;
@@ -114,10 +115,6 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
         ? new Date(patient.scheduledDate).toLocaleDateString()
         : 'Not scheduled';
 
-    const reviewedDateDisplay = patient.reviewedAt
-        ? new Date(patient.reviewedAt).toLocaleDateString()
-        : 'Not reviewed';
-
     const handleScheduleConfirm = (slot: TimeSlot) => {
         console.log('Scheduling appointment:', {
             patientId: patient.id,
@@ -129,11 +126,6 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
         setSelectedSlot(null);
         setIsScheduled(true);
         // In real app, you'd make an API call here
-    };
-
-    const handleReviewClick = () => {
-        onUpdateStatus('reviewed');
-        setIsReviewed(true);
     };
 
     const getReviewSteps = () => {
@@ -161,7 +153,8 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
         ];
     };
 
-    const canSubmitMAReview = currentUser.role === 'MA' && 
+    const canSubmitMAReview = 
+        currentUser.role === 'MA' && 
         patient.reviewStatus === 'PENDING_MA_REVIEW';
 
     const renderActionButtons = () => {
@@ -207,7 +200,7 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose}>
+        <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth>
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
             
             <div className="fixed inset-0 flex items-center justify-start pl-8">
@@ -241,21 +234,6 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
                             </button>
 
                             <button
-                                onClick={handleReviewClick}
-                                disabled={isReviewed}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
-                                    isReviewed
-                                        ? 'bg-green-400 text-white cursor-default'
-                                        : 'bg-white text-green-600 hover:bg-green-50'
-                                }`}
-                            >
-                                <CheckCircleIcon className="h-4 w-4" />
-                                <span className="text-sm">
-                                    {isReviewed ? 'Reviewed' : 'Mark as Reviewed'}
-                                </span>
-                            </button>
-
-                            <button
                                 onClick={openEHR}
                                 className="flex items-center gap-2 px-3 py-1.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
                             >
@@ -275,18 +253,11 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
                     {/* Content */}
                     <div className="p-6 h-[calc(100vh-12rem)] overflow-y-auto">
                         <div className="max-w-4xl mx-auto space-y-6">
-                            <PatientTabs patient={patient} />
-                            
-                            {/* Add MA Review Form */}
-                            {canSubmitMAReview && (
-                                <MAReviewForm 
-                                    patient={patient}
-                                    onSubmit={async (data) => {
-                                        await onUpdateStatus(data.status);
-                                        console.log('Review note:', data.note);
-                                    }}
-                                />
-                            )}
+                            <PatientTabs 
+                                patient={patient} 
+                                currentUser={currentUser}
+                                onUpdateStatus={onUpdateStatus}
+                            />
                         </div>
                     </div>
                 </Dialog.Panel>

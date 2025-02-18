@@ -43,6 +43,49 @@ export interface RequiredAction {
     status: 'pending' | 'completed';
 }
 
+export interface DataSync {
+    id: string;
+    patientId: string;
+    category: 'insurance' | 'medical_records' | 'lab_work' | 'imaging' | 'documentation' | 'coordination';
+    title: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+    status: 'pending' | 'in_progress' | 'completed' | 'blocked' | 'failed';
+    progress: number;
+    dueDate: Date;
+    assignedTo?: string;
+    steps: Array<{
+        id: string;
+        title: string;
+        description: string;
+        status: 'pending' | 'in_progress' | 'completed' | 'blocked' | 'failed';
+        timestamp: Date;
+        details: string;
+        blockers?: string[];
+        nextAction?: string;
+    }>;
+    source: {
+        system: string;
+        organization: string;
+        contact?: {
+            name: string;
+            role: string;
+            phone?: string;
+            email?: string;
+            fax?: string;
+        };
+    };
+    metadata: {
+        attempts: number;
+        lastAttempt?: Date;
+        nextAttempt?: Date;
+        method: 'fax' | 'phone' | 'email' | 'portal' | 'mail';
+        urgency: 'routine' | 'expedited' | 'stat';
+        notes?: string[];
+    };
+    lastUpdated: Date;
+}
+
 export const fetchPatients = async () => {
     try {
         const response = await fetch(`${API_URL}/patients`);
@@ -98,6 +141,22 @@ export const getChatCompletion = async (chat: string, patient: Patient): Promise
         return await response.json();
     } catch (error) {
         console.error(error);
+        throw error;
+    }
+};
+
+export const fetchDataSyncs = async (patientId: string): Promise<DataSync[]> => {
+    try {
+        console.log('Making request to:', `/api/patients/${patientId}/datasyncs`);
+        const response = await fetch(`/api/patients/${patientId}/datasyncs`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data syncs: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Response data:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching data syncs:', error);
         throw error;
     }
 };

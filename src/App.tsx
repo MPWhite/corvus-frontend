@@ -15,17 +15,13 @@ function App() {
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
     return (
-        <div className="App">
+        <div className="min-h-screen bg-gray-50">
             <TriageDashboard 
-                currentUser={mockUser} 
+                currentUser={mockUser}
                 onPatientSelect={setSelectedPatient}
             />
-            {/* AI Assistant Panel */}
             <AIAssistantPanel 
                 patient={selectedPatient}
-                onAction={(action) => {
-                    console.log('AI Assistant action:', action);
-                }}
             />
         </div>
     );

@@ -9,13 +9,19 @@ export default defineConfig({
     sourcemap: true,
   },
   resolve: {
-    extensions: ['.js', '.ts', '.jsx', '.tsx']
+    extensions: ['.js', '.ts', '.jsx', '.tsx'],
+    alias: {
+      '@mui/material': '@mui/material',
+      '@mui/icons-material': '@mui/icons-material',
+    }
   },
   server: {
     proxy: {
       '/api': {
         target: 'http://localhost:4001',
         changeOrigin: true,
+        secure: false,
+        ws: true
       },
     },
   },

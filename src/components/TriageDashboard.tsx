@@ -23,36 +23,19 @@ interface TriageDashboardProps {
     onPatientSelect: (patient: Patient | null) => void;
 }
 
-interface SurgeonOption {
-    id: string;
-    name: string;
-    role: 'SURGEON';
-    email: string;
-}
-
 const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatientSelect }) => {
     const [patients, setPatients] = useState<Patient[]>([]);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
-        reviewStatus: 'all', // 'all' | 'needs-review' | 'reviewed'
+        reviewStatus: 'all',
         surgeryType: 'all',
         provider: 'all'
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const [isSurgeonView, setIsSurgeonView] = useState(currentUser?.role === 'SURGEON');
-    const [selectedSurgeon, setSelectedSurgeon] = useState<SurgeonOption | null>(
-        currentUser?.role === 'SURGEON' ? currentUser as SurgeonOption : null
-    );
-
-    const surgeons: SurgeonOption[] = [
-        { id: '1', name: 'Dr. Smith', role: 'SURGEON', email: 'dr.smith@hospital.com' },
-        { id: '2', name: 'Dr. Palmer', role: 'SURGEON', email: 'dr.palmer@hospital.com' },
-        { id: '3', name: 'Dr. Wilson', role: 'SURGEON', email: 'dr.wilson@hospital.com' },
-        { id: '4', name: 'Dr. Chen', role: 'SURGEON', email: 'dr.chen@hospital.com' }
-    ];
+    const [isSurgeonView, setIsSurgeonView] = useState(false);
 
     const loadPatients = async () => {
         setLoading(true);
@@ -77,8 +60,15 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
     }, []);
 
     const handlePatientClick = (patient: Patient) => {
+        console.log('Opening patient modal:', {
+            patientId: patient.id,
+            patientName: patient.name,
+            patientStatus: patient.reviewStatus,
+            currentUser
+        });
         setSelectedPatient(patient);
         setIsModalOpen(true);
+        onPatientSelect(patient);
     };
 
     const handleCloseModal = () => {
@@ -97,98 +87,111 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
         }
     };
 
-    // Get unique values for filters
-    const surgeryTypes = [...new Set(patients.map(p => p.surgeryType))];
-    const providers = [...new Set(patients.map(p => p.assignedTo))];
+    // Replace the dynamic surgery types with a fixed list
+    const surgeryTypes = [
+        'Knee Replacement',
+        'Hip Replacement',
+        'Spinal Fusion',
+        'Shoulder Surgery',
+        'ACL Reconstruction'
+    ];
 
-    // Update the status options based on role
-    const getStatusOptions = () => {
-        if (isSurgeonView) {
-            return [
-                { value: 'all', label: 'All Statuses' },
-                { value: 'READY_FOR_SURGEON', label: 'Ready for Review' },
-                { value: 'SURGEON_APPROVED', label: 'Approved' },
-                { value: 'SCHEDULED', label: 'Scheduled' }
-            ];
-        }
-        return [
-            { value: 'all', label: 'All Statuses' },
-            { value: 'PENDING_MA_REVIEW', label: 'Pending MA Review' },
-            { value: 'NEEDS_MORE_INFO', label: 'Needs More Info' },
-            { value: 'READY_FOR_SURGEON', label: 'Ready for Surgeon' },
-            { value: 'SURGEON_APPROVED', label: 'Surgeon Approved' },
-            { value: 'SCHEDULED', label: 'Scheduled' }
-        ];
-    };
+    // Keep the providers dynamic
+    const providers = [...new Set(patients.map(p => p.referringProvider))];
 
-    // Update the filtering logic
-    const filteredPatients = patients.filter(patient => {
-        console.log('Filtering patient:', {
-            name: patient.name,
-            referringProvider: patient.referringProvider,
-            selectedProvider: filters.provider,
-            matches: filters.provider === 'all' || patient.referringProvider === filters.provider
+    // Update status options to show all statuses
+    const statusOptions = [
+        { value: 'all', label: 'All Statuses' },
+        { value: 'PENDING_MA_REVIEW', label: 'Pending MA Review' },
+        { value: 'NEEDS_MORE_INFO', label: 'Needs More Info' },
+        { value: 'READY_FOR_SURGEON', label: 'Ready for Surgeon' },
+        { value: 'APPROVED_FOR_SCHEDULING', label: 'Approved for Scheduling' },
+        { value: 'SCHEDULED', label: 'Scheduled' }
+    ];
+
+    // Single filtering function to be used everywhere
+    const filterPatients = (patients: Patient[]) => {
+        console.log('Starting filter with:', {
+            currentFilters: filters,
+            totalPatients: patients.length
         });
 
-        const matchesReviewStatus = 
-            filters.reviewStatus === 'all' || patient.reviewStatus === filters.reviewStatus;
+        const filtered = patients.filter(patient => {
+            const matchesReviewStatus = filters.reviewStatus === 'all' || patient.reviewStatus === filters.reviewStatus;
+            const matchesSurgeryType = filters.surgeryType === 'all' || patient.surgeryType === filters.surgeryType;
+            const matchesProvider = filters.provider === 'all' || patient.referringProvider === filters.provider;
+            const matchesSearch = !searchTerm || patient.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesSurgeryType = 
-            filters.surgeryType === 'all' || patient.surgeryType === filters.surgeryType;
+            console.log('Patient filter check:', {
+                patient: patient.name,
+                patientSurgeryType: patient.surgeryType,
+                filterSurgeryType: filters.surgeryType,
+                matchesSurgeryType,
+                matchesReviewStatus,
+                matchesProvider,
+                matchesSearch,
+                overallMatch: matchesReviewStatus && matchesSurgeryType && matchesProvider && matchesSearch
+            });
 
-        const matchesProvider = 
-            filters.provider === 'all' || patient.referringProvider === filters.provider;
+            return matchesReviewStatus && matchesSurgeryType && matchesProvider && matchesSearch;
+        });
 
-        const matchesSearch = searchTerm === '' || (
-            patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            patient.surgeryType.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        console.log('Filter results:', {
+            beforeCount: patients.length,
+            afterCount: filtered.length,
+            surgeryTypeFilter: filters.surgeryType
+        });
 
-        return matchesReviewStatus && matchesSurgeryType && matchesProvider && matchesSearch;
-    });
-
-    // Calculate statistics
-    const stats = {
-        total: patients.length,
-        needsReview: patients.filter(p => p.needsReview).length,
-        reviewed: patients.filter(p => !p.needsReview).length
+        return filtered;
     };
 
-    // Update the patient filtering logic based on view
     const getFilteredLists = () => {
-        // Step 1: Apply surgeon filter first
-        let filteredPatients = patients;
-        if (filters.provider !== 'all') {
-            filteredPatients = patients.filter(p => p.assignedTo === filters.provider);
-            console.log(`Filtering for surgeon ${filters.provider}:`, filteredPatients.length);
-        }
-
-        // Step 2: Create lists by status
-        const lists = {
-            pendingMAReview: filteredPatients.filter(p => p.reviewStatus === 'PENDING_MA_REVIEW'),
-            readyForSurgeon: filteredPatients.filter(p => p.reviewStatus === 'READY_FOR_SURGEON'),
-            needsMoreInfo: filteredPatients.filter(p => p.reviewStatus === 'NEEDS_MORE_INFO'),
-            surgeonApproved: filteredPatients.filter(p => p.reviewStatus === 'SURGEON_APPROVED'),
-            scheduled: filteredPatients.filter(p => p.reviewStatus === 'SCHEDULED')
+        const filteredPatients = filterPatients(patients);
+        
+        // Helper function to sort by priority
+        const sortByPriority = (patients: Patient[]) => {
+            return [...patients].sort((a, b) => {
+                // Sort by priority score (high to low)
+                const scoreA = a.priorityScore || 0;
+                const scoreB = b.priorityScore || 0;
+                if (scoreB !== scoreA) {
+                    return scoreB - scoreA;
+                }
+                // If scores are equal, sort by creation date (newest first)
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
         };
-
-        // Step 3: Additional document check for ready for surgeon
-        lists.readyForSurgeon = lists.readyForSurgeon.filter(p => 
-            p.requiredDocuments?.every(d => d.received)
+        
+        // Filter and sort each list
+        const pendingList = sortByPriority(
+            filteredPatients.filter(p => p.reviewStatus === 'PENDING_MA_REVIEW')
         );
-
-        // Debug logging
-        console.log('=== Filtered Lists ===', {
+        const needsInfoList = sortByPriority(
+            filteredPatients.filter(p => p.reviewStatus === 'NEEDS_MORE_INFO')
+        );
+        const readyList = sortByPriority(
+            filteredPatients.filter(p => p.reviewStatus === 'READY_FOR_SURGEON')
+        );
+        const approvedList = sortByPriority(
+            filteredPatients.filter(p => p.reviewStatus === 'APPROVED_FOR_SCHEDULING')
+        );
+        const scheduledList = sortByPriority(
+            filteredPatients.filter(p => p.reviewStatus === 'SCHEDULED')
+        );
+        
+        return {
             surgeon: filters.provider,
             total: filteredPatients.length,
-            ready: lists.readyForSurgeon.length,
-            pending: lists.pendingMAReview.length,
-            needsInfo: lists.needsMoreInfo.length,
-            approved: lists.surgeonApproved.length,
-            scheduled: lists.scheduled.length
-        });
-
-        return lists;
+            ready: readyList.length,
+            pending: pendingList.length,
+            needsInfo: needsInfoList.length,
+            approved: approvedList.length,
+            pendingList,
+            readyList,
+            needsInfoList,
+            approvedList,
+            scheduledList
+        };
     };
 
     const formatScheduledDate = (dateString: string | Date) => {
@@ -272,6 +275,17 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2 text-gray-500">
+                                        <UserCircleIcon className="h-5 w-5" />
+                                        <span>{currentUser?.name || 'Guest'}</span>
+                                    </div>
+                                    <button 
+                                        onClick={loadPatients}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
+                                    >
+                                        <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                                        Refresh
+                                    </button>
                                     <div className="flex items-center gap-3">
                                         <span className={`text-sm ${!isSurgeonView ? 'font-medium text-blue-600' : 'text-gray-500'}`}>
                                             MA View
@@ -294,36 +308,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                             Surgeon View
                                         </span>
                                     </div>
-                                    <div className="relative">
-                                        {currentUser?.role !== 'SURGEON' && (
-                                            <select
-                                                value={selectedSurgeon?.id || ''}
-                                                onChange={(e) => {
-                                                    const surgeon = surgeons.find(s => s.id === e.target.value);
-                                                    setSelectedSurgeon(surgeon || null);
-                                                }}
-                                                className="appearance-none bg-white pl-3 pr-10 py-2 text-sm text-gray-700 rounded-md border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            >
-                                                <option value="">All Surgeons</option>
-                                                {surgeons.map(surgeon => (
-                                                    <option key={surgeon.id} value={surgeon.id}>
-                                                        {surgeon.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-gray-500">
-                                        <UserCircleIcon className="h-5 w-5" />
-                                        <span>{currentUser?.name}</span>
-                                    </div>
-                                    <button 
-                                        onClick={loadPatients}
-                                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
-                                    >
-                                        <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-                                        Refresh
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -339,7 +323,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-blue-600">Total Patients</p>
-                                        <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+                                        <p className="text-2xl font-bold text-blue-900">{patients.length}</p>
                                         <p className="text-xs text-blue-500 mt-1">+12% from last week</p>
                                     </div>
                                 </div>
@@ -352,7 +336,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-yellow-600">Needs Review</p>
-                                        <p className="text-2xl font-bold text-yellow-900">{stats.needsReview}</p>
+                                        <p className="text-2xl font-bold text-yellow-900">
+                                            {patients.filter(p => 
+                                                p.reviewStatus !== 'APPROVED_FOR_SCHEDULING' && 
+                                                p.reviewStatus !== 'SCHEDULED'
+                                            ).length}
+                                        </p>
                                         <p className="text-xs text-yellow-500 mt-1">4 urgent cases</p>
                                     </div>
                                 </div>
@@ -365,7 +354,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-green-600">Reviewed</p>
-                                        <p className="text-2xl font-bold text-green-900">{stats.reviewed}</p>
+                                        <p className="text-2xl font-bold text-green-900">
+                                            {patients.filter(p => 
+                                                p.reviewStatus === 'APPROVED_FOR_SCHEDULING' || 
+                                                p.reviewStatus === 'SCHEDULED'
+                                            ).length}
+                                        </p>
                                         <p className="text-xs text-green-500 mt-1">On track this week</p>
                                     </div>
                                 </div>
@@ -394,7 +388,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                             value={filters.reviewStatus}
                                             onChange={(e) => setFilters({...filters, reviewStatus: e.target.value})}
                                         >
-                                            {getStatusOptions().map(option => (
+                                            {statusOptions.map(option => (
                                                 <option key={option.value} value={option.value}>
                                                     {option.label}
                                                 </option>
@@ -404,7 +398,19 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                         <select
                                             className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
                                             value={filters.surgeryType}
-                                            onChange={(e) => setFilters({...filters, surgeryType: e.target.value})}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value;
+                                                console.log('Surgery type select changed:', {
+                                                    oldValue: filters.surgeryType,
+                                                    newValue,
+                                                    availableTypes: surgeryTypes
+                                                });
+                                                setFilters(prev => {
+                                                    const newFilters = {...prev, surgeryType: newValue};
+                                                    console.log('Updated filters:', newFilters);
+                                                    return newFilters;
+                                                });
+                                            }}
                                         >
                                             <option value="all">All Types</option>
                                             {surgeryTypes.map(type => (
@@ -419,51 +425,44 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                         {/* Patient Lists */}
                         <div className="space-y-6">
                             {isSurgeonView ? (
-                                // Surgeon View
+                                // Surgeon View - only show patients ready for surgeon review
                                 <>
-                                    {getFilteredLists().readyForSurgeon?.length > 0 && (
+                                    {getFilteredLists().readyList?.length > 0 && (
                                         <PatientList
-                                            title="Ready for Review"
-                                            patients={getFilteredLists().readyForSurgeon}
+                                            title="Ready for Surgeon Review"
+                                            patients={getFilteredLists().readyList}
                                             onPatientSelect={handlePatientClick}
                                         />
                                     )}
                                 </>
                             ) : (
-                                // MA View
+                                // MA View - show all other statuses
                                 <>
-                                    {getFilteredLists().pendingMAReview?.length > 0 && (
+                                    {getFilteredLists().pendingList?.length > 0 && (
                                         <PatientList
                                             title="Pending MA Review"
-                                            patients={getFilteredLists().pendingMAReview}
+                                            patients={getFilteredLists().pendingList}
                                             onPatientSelect={handlePatientClick}
                                         />
                                     )}
-                                    {getFilteredLists().readyForSurgeon.length > 0 && (
+                                    {getFilteredLists().needsInfoList.length > 0 && (
                                         <PatientList
-                                            title="READY_FOR_SURGEON"
-                                            patients={getFilteredLists().readyForSurgeon}
+                                            title="Needs More Info"
+                                            patients={getFilteredLists().needsInfoList}
                                             onPatientSelect={handlePatientClick}
                                         />
                                     )}
-                                    {getFilteredLists().needsMoreInfo.length > 0 && (
+                                    {getFilteredLists().approvedList?.length > 0 && (
                                         <PatientList
-                                            title="NEEDS_MORE_INFO"
-                                            patients={getFilteredLists().needsMoreInfo}
+                                            title="Surgeon Reviewed"
+                                            patients={getFilteredLists().approvedList}
                                             onPatientSelect={handlePatientClick}
                                         />
                                     )}
-                                    {getFilteredLists().surgeonApproved.length > 0 && (
+                                    {getFilteredLists().scheduledList?.length > 0 && (
                                         <PatientList
-                                            title="SURGEON_APPROVED"
-                                            patients={getFilteredLists().surgeonApproved}
-                                            onPatientSelect={handlePatientClick}
-                                        />
-                                    )}
-                                    {getFilteredLists().scheduled.length > 0 && (
-                                        <PatientList
-                                            title="SCHEDULED"
-                                            patients={getFilteredLists().scheduled}
+                                            title="Scheduled"
+                                            patients={getFilteredLists().scheduledList}
                                             onPatientSelect={handlePatientClick}
                                         />
                                     )}
@@ -478,7 +477,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
             {selectedPatient && (
                 <PatientDetailModal
                     patient={selectedPatient}
-                    currentUser={currentUser}
+                    currentUser={currentUser || {
+                        id: '1',
+                        name: 'Default User',
+                        role: 'MA',
+                        email: 'default@example.com'
+                    }}
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     onUpdateStatus={handleStatusUpdate}

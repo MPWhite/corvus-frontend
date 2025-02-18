@@ -112,11 +112,13 @@ export interface User {
 
 export type ReviewStatus = 
     | 'PENDING_MA_REVIEW'
+    | 'MA_REVIEWING'
     | 'READY_FOR_SURGEON'
-    | 'SURGEON_APPROVED'
+    | 'SURGEON_REVIEWING'
+    | 'APPROVED_FOR_SCHEDULING'
     | 'NEEDS_MORE_INFO'
-    | 'SCHEDULED'
-    | 'REJECTED';
+    | 'NOT_SURGICAL_CANDIDATE'
+    | 'SCHEDULED';
 
 export interface ReviewNote {
     content: string;
@@ -143,6 +145,7 @@ export interface SurgicalHistory {
 }
 
 export interface Patient {
+    _id: string;
     id: string;
     name: string;
     age: number;
@@ -175,6 +178,7 @@ export interface Patient {
     surgicalHistory: SurgicalHistory[];
     labResults: LabResult[];
     aiAssessment?: AIAssessment;
+    insuranceVerified?: boolean;
 }
 
 export interface SurgeryRequirement {
