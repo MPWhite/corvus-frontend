@@ -6,9 +6,9 @@ import { User, Patient } from './types/PatientTypes';
 // Mock user for development
 const mockUser: User = {
     id: '1',
-    name: 'Dr. Smith',
+    name: '',
     role: 'MA', // or 'SURGEON' to test different views
-    email: 'dr.smith@hospital.com'
+    email: ''
 };
 
 function App() {

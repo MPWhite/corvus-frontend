@@ -33,6 +33,10 @@ const getStatusDisplay = (status: string) => {
     ).join(' ');
 };
 
+const capitalizeFirstLetter = (string: string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
 const AIAssistantPreview: React.FC<{ patient: Patient }> = ({ patient }) => {
     return (
         <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
@@ -131,21 +135,16 @@ const PatientCard: React.FC<PatientCardProps> = ({
                         </p>
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500">Provider</p>
+                        <p className="text-sm text-gray-500">Gender</p>
                         <p className="text-base text-gray-900">
-                            {patient.assignedTo || 'Unassigned'}
+                            {patient.gender ? capitalizeFirstLetter(patient.gender) : 'N/A'}
                         </p>
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500">Referring</p>
-                        <div className="flex items-center justify-between">
-                            <p className="text-base text-gray-900">
-                                {patient.referringProvider || 'None'}
-                            </p>
-                            <span className="text-sm text-gray-500">
-                                Referred: {new Date(patient.referralDate || patient.consultDate || Date.now()).toLocaleDateString()}
-                            </span>
-                        </div>
+                        <p className="text-sm text-gray-500">Surgery</p>
+                        <p className="text-base text-gray-900">
+                            {patient.surgeryType || 'Not specified'}
+                        </p>
                     </div>
                 </div>
 

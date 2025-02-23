@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tab } from '@headlessui/react';
 import { Patient, User } from '../types/PatientTypes';
-import { ClipboardDocumentListIcon, DocumentTextIcon, ClockIcon, BeakerIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentListIcon, DocumentTextIcon, ClockIcon, BeakerIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon, UserCircleIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import PatientOverviewTab from './PatientOverviewTab';
 import PatientMedicalHistoryTab from './PatientMedicalHistoryTab';
 import PatientDocumentsTab from './PatientDocumentsTab';
@@ -9,6 +9,7 @@ import { AIChat } from './AIChatComponent';
 import AIAssessmentTab from './AIAssessmentTab';
 import MAReviewForm from './MAReviewForm';
 import SurgeonReviewForm from './SurgeonReviewForm';
+import AIActivityFeed from './AIActivityFeed';
 
 interface PatientTabsProps {
     patient: Patient;
@@ -38,19 +39,20 @@ const PatientTabs: React.FC<PatientTabsProps> = ({ patient, currentUser, onUpdat
         showSurgeonReviewTab
     });
 
+    // Filter out the AI Assistant tab
     const tabs = [
-        { 
-            name: 'Overview', 
+        {
+            name: 'Overview',
             icon: ClipboardDocumentListIcon,
             component: <PatientOverviewTab patient={patient} />
         },
-        { 
-            name: 'Medical History', 
+        {
+            name: 'Medical History',
             icon: BeakerIcon,
             component: <PatientMedicalHistoryTab patient={patient} />
         },
-        { 
-            name: 'Documents', 
+        {
+            name: 'Documents',
             icon: DocumentTextIcon,
             component: <PatientDocumentsTab patient={patient} />
         },
@@ -61,11 +63,11 @@ const PatientTabs: React.FC<PatientTabsProps> = ({ patient, currentUser, onUpdat
         }
     ];
 
-    // Add review tabs based on patient status only
+    // Show review tabs based on patient status, not user role
     if (showMAReviewTab) {
         tabs.push({
             name: 'MA Review',
-            icon: ClipboardDocumentListIcon,
+            icon: UserCircleIcon,
             component: <MAReviewForm patient={patient} onSubmit={onUpdateStatus} />
         });
     }
@@ -73,7 +75,7 @@ const PatientTabs: React.FC<PatientTabsProps> = ({ patient, currentUser, onUpdat
     if (showSurgeonReviewTab) {
         tabs.push({
             name: 'Surgeon Review',
-            icon: ClipboardDocumentListIcon,
+            icon: UserCircleIcon,
             component: <SurgeonReviewForm patient={patient} onSubmit={onUpdateStatus} />
         });
     }

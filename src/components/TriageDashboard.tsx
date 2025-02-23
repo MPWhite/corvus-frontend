@@ -31,7 +31,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
     const [filters, setFilters] = useState({
         reviewStatus: 'all',
         surgeryType: 'all',
-        provider: 'all'
+        provider: 'all',
+        surgeon: 'all'
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -97,100 +98,54 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
     ];
 
     // Keep the providers dynamic
-    const providers = [...new Set(patients.map(p => p.referringProvider))];
+    const providers = [...new Set(patients
+        .map(p => p.referringProvider)
+        .filter(provider => provider && provider.trim() !== '')
+    )];
 
-    // Update status options to show all statuses
+    // First, update the status options to match actual patient status values
     const statusOptions = [
         { value: 'all', label: 'All Statuses' },
         { value: 'PENDING_MA_REVIEW', label: 'Pending MA Review' },
         { value: 'NEEDS_MORE_INFO', label: 'Needs More Info' },
         { value: 'READY_FOR_SURGEON', label: 'Ready for Surgeon' },
-        { value: 'APPROVED_FOR_SCHEDULING', label: 'Approved for Scheduling' },
+        { value: 'SURGEON_APPROVED', label: 'Surgeon Approved' },
         { value: 'SCHEDULED', label: 'Scheduled' }
     ];
 
-    // Single filtering function to be used everywhere
-    const filterPatients = (patients: Patient[]) => {
-        console.log('Starting filter with:', {
-            currentFilters: filters,
-            totalPatients: patients.length
-        });
+    // Replace the hardcoded surgeons array with this:
+    const surgeons = [...new Set(patients
+        .map(p => p.assignedTo)
+        .filter(surgeon => surgeon && surgeon.trim() !== '')
+    )];
 
-        const filtered = patients.filter(patient => {
-            const matchesReviewStatus = filters.reviewStatus === 'all' || patient.reviewStatus === filters.reviewStatus;
-            const matchesSurgeryType = filters.surgeryType === 'all' || patient.surgeryType === filters.surgeryType;
-            const matchesProvider = filters.provider === 'all' || patient.referringProvider === filters.provider;
-            const matchesSearch = !searchTerm || patient.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-            console.log('Patient filter check:', {
-                patient: patient.name,
-                patientSurgeryType: patient.surgeryType,
-                filterSurgeryType: filters.surgeryType,
-                matchesSurgeryType,
-                matchesReviewStatus,
-                matchesProvider,
-                matchesSearch,
-                overallMatch: matchesReviewStatus && matchesSurgeryType && matchesProvider && matchesSearch
-            });
-
-            return matchesReviewStatus && matchesSurgeryType && matchesProvider && matchesSearch;
-        });
-
-        console.log('Filter results:', {
-            beforeCount: patients.length,
-            afterCount: filtered.length,
-            surgeryTypeFilter: filters.surgeryType
-        });
-
-        return filtered;
-    };
-
+    // Then, consolidate the filtering into one function
     const getFilteredLists = () => {
-        const filteredPatients = filterPatients(patients);
-        
-        // Helper function to sort by priority
-        const sortByPriority = (patients: Patient[]) => {
-            return [...patients].sort((a, b) => {
-                // Sort by priority score (high to low)
-                const scoreA = a.priorityScore || 0;
-                const scoreB = b.priorityScore || 0;
-                if (scoreB !== scoreA) {
-                    return scoreB - scoreA;
-                }
-                // If scores are equal, sort by creation date (newest first)
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            });
-        };
-        
-        // Filter and sort each list
-        const pendingList = sortByPriority(
-            filteredPatients.filter(p => p.reviewStatus === 'PENDING_MA_REVIEW')
-        );
-        const needsInfoList = sortByPriority(
-            filteredPatients.filter(p => p.reviewStatus === 'NEEDS_MORE_INFO')
-        );
-        const readyList = sortByPriority(
-            filteredPatients.filter(p => p.reviewStatus === 'READY_FOR_SURGEON')
-        );
-        const approvedList = sortByPriority(
-            filteredPatients.filter(p => p.reviewStatus === 'APPROVED_FOR_SCHEDULING')
-        );
-        const scheduledList = sortByPriority(
-            filteredPatients.filter(p => p.reviewStatus === 'SCHEDULED')
-        );
-        
+        // First, apply all filters
+        const filteredPatients = patients.filter(patient => {
+            const matchesSearch = !searchTerm || 
+                patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                patient.referringProvider?.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const matchesSurgeryType = filters.surgeryType === 'all' || 
+                patient.surgeryType === filters.surgeryType;
+            
+            const matchesSurgeon = filters.surgeon === 'all' || 
+                patient.assignedTo === filters.surgeon;
+
+            const matchesStatus = filters.reviewStatus === 'all' || 
+                patient.reviewStatus === filters.reviewStatus;
+
+            return matchesSearch && matchesSurgeryType && matchesSurgeon && matchesStatus;
+        });
+
+        // Then split into lists by status
         return {
-            surgeon: filters.provider,
-            total: filteredPatients.length,
-            ready: readyList.length,
-            pending: pendingList.length,
-            needsInfo: needsInfoList.length,
-            approved: approvedList.length,
-            pendingList,
-            readyList,
-            needsInfoList,
-            approvedList,
-            scheduledList
+            pendingList: filteredPatients.filter(p => p.reviewStatus === 'PENDING_MA_REVIEW'),
+            readyList: filteredPatients.filter(p => p.reviewStatus === 'READY_FOR_SURGEON'),
+            needsInfoList: filteredPatients.filter(p => p.reviewStatus === 'NEEDS_MORE_INFO'),
+            approvedList: filteredPatients.filter(p => p.reviewStatus === 'SURGEON_APPROVED'),
+            scheduledList: filteredPatients.filter(p => p.reviewStatus === 'SCHEDULED')
         };
     };
 
@@ -384,7 +339,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                     </div>
                                     <div className="flex gap-4">
                                         <select
-                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
+                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 w-48"
                                             value={filters.reviewStatus}
                                             onChange={(e) => setFilters({...filters, reviewStatus: e.target.value})}
                                         >
@@ -396,7 +351,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                         </select>
                                         
                                         <select
-                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
+                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 w-48"
                                             value={filters.surgeryType}
                                             onChange={(e) => {
                                                 const newValue = e.target.value;
@@ -412,9 +367,20 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ currentUser, onPatien
                                                 });
                                             }}
                                         >
-                                            <option value="all">All Types</option>
+                                            <option value="all">All Surgeries</option>
                                             {surgeryTypes.map(type => (
                                                 <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+
+                                        <select
+                                            className="px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 w-48"
+                                            value={filters.surgeon}
+                                            onChange={(e) => setFilters({ ...filters, surgeon: e.target.value })}
+                                        >
+                                            <option value="all">All Surgeons</option>
+                                            {surgeons.map(surgeon => (
+                                                <option key={surgeon} value={surgeon}>{surgeon}</option>
                                             ))}
                                         </select>
                                     </div>

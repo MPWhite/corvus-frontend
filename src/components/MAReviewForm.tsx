@@ -25,6 +25,26 @@ const MAReviewForm: React.FC<MAReviewFormProps> = ({ patient, onSubmit }) => {
         onSubmit(status);
     };
 
+    const generateEmailDraft = () => {
+        // Get just the provider's name, assuming it's in the format "Dr. LastName"
+        const providerName = patient.referringProvider || '';
+        const lastName = providerName.replace(/^(Dr\.|Dr|Doctor)\s+/i, '').trim();
+        
+        const emailTemplate = `Dear Dr. ${lastName},
+
+I am writing regarding your patient ${patient.name}. We need the following additional information to proceed with their surgical evaluation:
+
+[List specific information needed]
+
+Please provide this information at your earliest convenience.
+
+Best regards,
+[Your name]`;
+
+        console.log('Generated email template:', emailTemplate); // Debug log
+        return emailTemplate;
+    };
+
     return (
         <div className="space-y-6">
             {/* Review Checklist */}
@@ -83,7 +103,12 @@ const MAReviewForm: React.FC<MAReviewFormProps> = ({ patient, onSubmit }) => {
                         Ready for Surgeon
                     </button>
                     <button
-                        onClick={() => handleSubmit('NEEDS_MORE_INFO')}
+                        onClick={() => {
+                            const emailBody = encodeURIComponent(generateEmailDraft());
+                            console.log('Sending email with body:', generateEmailDraft());
+                            window.location.href = `mailto:${patient.referringProviderEmail}?subject=Additional Information Needed - ${patient.name}&body=${emailBody}`;
+                            handleSubmit('NEEDS_MORE_INFO');
+                        }}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md"
                     >
                         <ExclamationTriangleIcon className="h-5 w-5" />
